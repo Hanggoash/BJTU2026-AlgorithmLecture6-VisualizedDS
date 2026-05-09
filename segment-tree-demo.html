@@ -1,0 +1,1835 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>线段树可视化</title>
+  <style>
+    :root {
+      --ink: #17212f;
+      --muted: #607089;
+      --line: #d9e1ec;
+      --panel: #ffffff;
+      --page: #f4f7fb;
+      --nav: #172232;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --teal: #0f766e;
+      --teal-soft: #ccfbf1;
+      --amber: #b45309;
+      --amber-soft: #fef3c7;
+      --rose: #be123c;
+      --rose-soft: #ffe4e6;
+      --green: #15803d;
+      --green-soft: #dcfce7;
+      --violet: #7c3aed;
+      --violet-soft: #ede9fe;
+      --shadow: 0 14px 32px rgba(21, 30, 45, 0.08);
+      --cell-w: 74px;
+      --label-w: 90px;
+      --node-card-w: 118px;
+      --node-card-h: 72px;
+      --tree-step: 94px;
+      --tree-node-w: 126px;
+      --tree-node-h: 62px;
+      --tree-base-w: 82px;
+      --tree-base-h: 50px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--page);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      padding: 17px 24px;
+      color: #ffffff;
+      background: var(--nav);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.15;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 7px 0 0;
+      color: #b9c5d5;
+      font-size: 13px;
+    }
+
+    .playbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .top-btn,
+    .mode-btn,
+    .apply-btn,
+    .random-btn {
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #eef4ff;
+      background: rgba(255, 255, 255, 0.08);
+      transition: transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+    }
+
+    .top-btn {
+      min-width: 40px;
+      padding: 0 10px;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .top-btn:hover,
+    .mode-btn:hover,
+    .apply-btn:hover,
+    .random-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.36);
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      transform: none;
+    }
+
+    .speed {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    .speed input {
+      width: 118px;
+      accent-color: #93c5fd;
+    }
+
+    .configbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 24px;
+      border-bottom: 1px solid #dfe6f0;
+      background: #ffffff;
+    }
+
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #334155;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .field input {
+      height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      color: #17212f;
+      background: #ffffff;
+    }
+
+    .field input[type="number"] {
+      width: 74px;
+      padding: 0 8px;
+    }
+
+    .field input[type="text"] {
+      width: min(520px, 48vw);
+      min-width: 260px;
+      padding: 0 10px;
+    }
+
+    .apply-btn,
+    .random-btn,
+    .mode-btn {
+      padding: 0 14px;
+      color: #17212f;
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .apply-btn {
+      color: #ffffff;
+      border-color: #1d4ed8;
+      background: #2563eb;
+    }
+
+    .mode-btn.active {
+      color: #ffffff;
+      border-color: #0f766e;
+      background: #0f766e;
+    }
+
+    .hint {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hint.error {
+      color: #b91c1c;
+    }
+
+    .stage {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 18px;
+      padding: 18px 24px 24px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #e7edf5;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+      font-weight: 740;
+      letter-spacing: 0;
+    }
+
+    .panel-head span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .array-scroll,
+    .tree-scroll {
+      overflow: auto;
+    }
+
+    .array-stage {
+      padding: 14px 14px 16px;
+    }
+
+    .value-row {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+      align-items: stretch;
+    }
+
+    .row-tag {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 58px;
+      border-radius: 8px;
+      border: 1px solid #d6e0ec;
+      background: #f8fafc;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .array-cell {
+      position: relative;
+      min-height: 58px;
+      padding: 9px 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #d5deea;
+      background: #ffffff;
+      text-align: center;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+    }
+
+    .array-cell .idx {
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1.1;
+    }
+
+    .array-cell .val {
+      margin-top: 6px;
+      font-size: 17px;
+      line-height: 1.1;
+      font-weight: 760;
+      color: #17212f;
+    }
+
+    .node-grid-wrap {
+      border-top: 1px solid #e7edf5;
+      padding-top: 14px;
+    }
+
+    .node-grid-title {
+      margin: 0 0 10px;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .node-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(var(--node-card-w), var(--node-card-w)));
+      gap: 10px;
+      align-content: start;
+    }
+
+    .node-card {
+      min-height: var(--node-card-h);
+      padding: 8px 8px 7px;
+      border-radius: 8px;
+      border: 1px solid #d5deea;
+      background: #ffffff;
+      text-align: center;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+    }
+
+    .node-card .node-id {
+      color: #475569;
+      font-size: 11px;
+      line-height: 1.1;
+      font-weight: 700;
+    }
+
+    .node-card .node-range {
+      margin-top: 6px;
+      color: #17212f;
+      font-size: 13px;
+      line-height: 1.2;
+      font-weight: 760;
+    }
+
+    .node-card .node-sum {
+      margin-top: 6px;
+      color: #0f172a;
+      font-size: 16px;
+      line-height: 1.1;
+      font-weight: 800;
+    }
+
+    .array-cell.role-covered.mode-structure {
+      border-color: #2563eb;
+      background: var(--blue-soft);
+    }
+
+    .tree-base.role-covered.mode-structure {
+      border-color: #2563eb;
+      background: var(--blue-soft);
+    }
+
+    .array-cell.role-covered.mode-update {
+      border-color: #d97706;
+      background: var(--amber-soft);
+    }
+
+    .tree-base.role-covered.mode-update {
+      border-color: #d97706;
+      background: var(--amber-soft);
+    }
+
+    .array-cell.role-covered.mode-query {
+      border-color: #0f766e;
+      background: var(--teal-soft);
+    }
+
+    .tree-base.role-covered.mode-query {
+      border-color: #0f766e;
+      background: var(--teal-soft);
+    }
+
+    .array-cell.role-current,
+    .node-card.role-current,
+    .tree-node.role-current,
+    .tree-base.role-current {
+      transform: translateY(-1px);
+    }
+
+    .array-cell.role-current.mode-structure,
+    .node-card.role-current.mode-structure,
+    .tree-node.role-current.mode-structure,
+    .tree-base.role-current.mode-structure {
+      border-color: #2563eb;
+      background: var(--blue-soft);
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.16);
+    }
+
+    .array-cell.role-current.mode-update,
+    .node-card.role-current.mode-update,
+    .tree-node.role-current.mode-update,
+    .tree-base.role-current.mode-update {
+      border-color: #d97706;
+      background: var(--amber-soft);
+      box-shadow: 0 12px 28px rgba(180, 83, 9, 0.18);
+    }
+
+    .array-cell.role-current.mode-query,
+    .node-card.role-current.mode-query,
+    .tree-node.role-current.mode-query,
+    .tree-base.role-current.mode-query {
+      border-color: #0f766e;
+      background: var(--teal-soft);
+      box-shadow: 0 12px 28px rgba(15, 118, 110, 0.16);
+    }
+
+    .node-card.role-visited,
+    .tree-node.role-visited,
+    .tree-base.role-visited,
+    .array-cell.role-visited {
+      border-color: #8b5cf6;
+      background: var(--violet-soft);
+    }
+
+    .node-card.role-answer,
+    .tree-node.role-answer,
+    .tree-base.role-answer,
+    .array-cell.role-answer {
+      border-color: #16a34a;
+      background: var(--green-soft);
+      box-shadow: 0 12px 28px rgba(21, 128, 61, 0.16);
+    }
+
+    .array-cell.role-source,
+    .tree-base.role-source {
+      border-color: #e11d48 !important;
+      background: var(--rose-soft) !important;
+      box-shadow: 0 10px 24px rgba(190, 18, 60, 0.15);
+    }
+
+    .tree-stage-wrap {
+      padding: 16px 16px 18px;
+    }
+
+    .tree-stage {
+      position: relative;
+      min-height: 640px;
+    }
+
+    .tree-lines {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .tree-lines line {
+      stroke: #94a3b8;
+      stroke-width: 2;
+      opacity: 0.82;
+    }
+
+    .tree-lines line.role-current.mode-structure {
+      stroke: #2563eb;
+      stroke-width: 3;
+    }
+
+    .tree-lines line.role-current.mode-update {
+      stroke: #d97706;
+      stroke-width: 3;
+    }
+
+    .tree-lines line.role-current.mode-query {
+      stroke: #0f766e;
+      stroke-width: 3;
+    }
+
+    .tree-lines line.role-visited {
+      stroke: #8b5cf6;
+      stroke-width: 2.5;
+    }
+
+    .tree-lines line.role-answer {
+      stroke: #16a34a;
+      stroke-width: 3;
+    }
+
+    .tree-node,
+    .tree-base {
+      position: absolute;
+      border: 2px solid #334155;
+      background: #ffffff;
+      border-radius: 4px;
+      text-align: center;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+    }
+
+    .tree-node {
+      width: var(--tree-node-w);
+      min-height: var(--tree-node-h);
+      padding: 7px 8px;
+      z-index: 3;
+    }
+
+    .tree-node .name,
+    .tree-base .name {
+      font-size: 13px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .tree-node .meta,
+    .tree-base .meta {
+      margin-top: 5px;
+      color: #334155;
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .tree-node .sum {
+      margin-top: 6px;
+      color: #0f172a;
+      font-size: 15px;
+      line-height: 1.1;
+      font-weight: 800;
+    }
+
+    .tree-base {
+      width: var(--tree-base-w);
+      min-height: var(--tree-base-h);
+      padding: 8px 6px;
+      z-index: 2;
+    }
+
+    .tree-base .meta {
+      margin-top: 6px;
+      font-size: 14px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: #17212f;
+    }
+
+    .inspector {
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
+    }
+
+    .status {
+      padding: 16px 16px 10px;
+      border-bottom: 1px solid #e8eef5;
+    }
+
+    .step-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .progress-track {
+      margin-top: 10px;
+      height: 8px;
+      border-radius: 999px;
+      background: #e9eff7;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #3b82f6 0%, #0ea5e9 100%);
+      transition: width 0.18s ease;
+    }
+
+    .step-body {
+      padding: 16px;
+      border-bottom: 1px solid #e8eef5;
+    }
+
+    .step-body h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      line-height: 1.3;
+      font-weight: 760;
+    }
+
+    .step-body p {
+      margin: 0;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .formula,
+    .answer {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #dde6f0;
+      background: #f8fafc;
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .answer {
+      min-height: 46px;
+      background: #f5fff7;
+      border-color: #d6f0dc;
+      color: #14532d;
+      font-weight: 700;
+    }
+
+    .facts {
+      padding: 14px 16px;
+      border-bottom: 1px solid #e8eef5;
+    }
+
+    .facts-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .fact {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #dde6f0;
+      background: #f8fafc;
+    }
+
+    .fact-label {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .fact-value {
+      margin-top: 6px;
+      color: #17212f;
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .legend {
+      padding: 16px;
+    }
+
+    .legend h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .legend-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #334155;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      flex: none;
+      border-radius: 4px;
+      border: 1px solid #c8d3e1;
+      background: #ffffff;
+    }
+
+    .swatch.blue {
+      background: var(--blue-soft);
+      border-color: #2563eb;
+    }
+
+    .swatch.amber {
+      background: var(--amber-soft);
+      border-color: #d97706;
+    }
+
+    .swatch.teal {
+      background: var(--teal-soft);
+      border-color: #0f766e;
+    }
+
+    .swatch.rose {
+      background: var(--rose-soft);
+      border-color: #e11d48;
+    }
+
+    .swatch.violet {
+      background: var(--violet-soft);
+      border-color: #8b5cf6;
+    }
+
+    .swatch.green {
+      background: var(--green-soft);
+      border-color: #16a34a;
+    }
+
+    @media (max-width: 1180px) {
+      .stage {
+        grid-template-columns: 1fr;
+      }
+
+      .inspector {
+        grid-template-rows: auto auto auto auto;
+      }
+    }
+
+    @media (max-width: 880px) {
+      .topbar,
+      .configbar {
+        grid-template-columns: 1fr;
+      }
+
+      .playbar {
+        justify-content: flex-start;
+      }
+
+      .field input[type="text"] {
+        width: min(100%, 520px);
+        min-width: 220px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>线段树可视化</h1>
+        <p>支持区间和线段树的结构关系、单点加和区间查询动画，离线打开即可演示。</p>
+      </div>
+      <div class="playbar" aria-label="播放控制">
+        <button class="top-btn" id="prevBtn" type="button" title="上一步" aria-label="上一步">&lt;</button>
+        <button class="top-btn" id="playBtn" type="button" title="自动播放" aria-label="自动播放">播放</button>
+        <button class="top-btn" id="nextBtn" type="button" title="下一步" aria-label="下一步">&gt;</button>
+        <button class="top-btn" id="resetBtn" type="button" title="重置" aria-label="重置">重置</button>
+        <label class="speed">速度 <input id="speedInput" type="range" min="350" max="1600" step="50" value="850" /></label>
+      </div>
+    </header>
+
+    <section class="configbar" aria-label="数据与模式设置">
+      <div class="input-group">
+        <label class="field">n
+          <input id="nInput" type="number" min="1" max="20" value="8" />
+        </label>
+        <label class="field">数组
+          <input id="valuesInput" type="text" value="7 2 6 3 9 1 5 4" />
+        </label>
+        <button class="apply-btn" id="applyBtn" type="button">应用数组</button>
+        <button class="random-btn" id="randomBtn" type="button">随机数组</button>
+        <span class="hint" id="configHint">最多 20 个整数，支持空格或逗号分隔。</span>
+      </div>
+
+      <div class="input-group">
+        <label class="field">位置 x
+          <input id="updateIndexInput" type="number" min="1" max="8" value="3" />
+        </label>
+        <label class="field">增量 delta
+          <input id="deltaInput" type="number" value="5" />
+        </label>
+        <label class="field">L
+          <input id="queryLeftInput" type="number" min="1" max="8" value="3" />
+        </label>
+        <label class="field">R
+          <input id="queryRightInput" type="number" min="1" max="8" value="7" />
+        </label>
+        <button class="mode-btn active" id="structureMode" type="button">结构关系</button>
+        <button class="mode-btn" id="updateMode" type="button">单点加</button>
+        <button class="mode-btn" id="queryMode" type="button">区间和</button>
+      </div>
+    </section>
+
+    <main class="stage">
+      <div class="workspace">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>原数组 / 节点数组</h2>
+            <span>上方看 a[i]，下方看 tree[p] 的编号、区间和节点值</span>
+          </div>
+          <div class="array-scroll">
+            <div class="array-stage">
+              <div id="arrayStage"></div>
+              <div class="node-grid-wrap">
+                <p class="node-grid-title">节点数组（只显示实际存在的结点）</p>
+                <div class="node-grid" id="nodeGrid"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>线段树结构关系</h2>
+            <span id="treeSummary">每个节点维护一个区间 [l, r] 的区间和</span>
+          </div>
+          <div class="tree-scroll">
+            <div class="tree-stage-wrap">
+              <div class="tree-stage" id="treeStage"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="panel inspector">
+        <div class="status">
+          <div class="step-topline">
+            <span id="stepCounter">1 / 1</span>
+            <span id="modeLabel">结构</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <div class="step-body">
+          <h2 id="stepTitle"></h2>
+          <p id="stepNote"></p>
+          <div class="formula" id="formulaBox"></div>
+          <div class="answer" id="answerBox"></div>
+        </div>
+
+        <div class="facts">
+          <div class="facts-grid">
+            <div class="fact">
+              <div class="fact-label">当前节点</div>
+              <div class="fact-value" id="nodeFact">-</div>
+            </div>
+            <div class="fact">
+              <div class="fact-label">当前区间</div>
+              <div class="fact-value" id="intervalFact">-</div>
+            </div>
+            <div class="fact">
+              <div class="fact-label">当前答案 / 当前总和</div>
+              <div class="fact-value" id="answerFact">-</div>
+            </div>
+            <div class="fact">
+              <div class="fact-label">访问路径</div>
+              <div class="fact-value" id="pathFact">-</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <h3>颜色</h3>
+          <div class="legend-list">
+            <div class="legend-item"><span class="swatch blue"></span><span>结构模式下当前正在讲解的节点和对应区间</span></div>
+            <div class="legend-item"><span class="swatch rose"></span><span>单点加时被修改的 a[x]</span></div>
+            <div class="legend-item"><span class="swatch amber"></span><span>单点加时当前访问或回溯更新到的节点</span></div>
+            <div class="legend-item"><span class="swatch teal"></span><span>区间查询时当前访问或累加到的节点</span></div>
+            <div class="legend-item"><span class="swatch violet"></span><span>已经走过的节点</span></div>
+            <div class="legend-item"><span class="swatch green"></span><span>最终答案涉及的节点或完成态</span></div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const MAX_N = 20;
+    const CELL_W = 74;
+    const LABEL_W = 90;
+    const TREE_STEP = 94;
+    const TREE_NODE_W = 126;
+    const TREE_NODE_H = 62;
+    const TREE_BASE_W = 82;
+    const TREE_BASE_H = 50;
+    const TREE_MARGIN_X = 56;
+    const TREE_TOP = 24;
+    const TREE_LEVEL_GAP = 110;
+
+    const els = {
+      nInput: document.getElementById("nInput"),
+      valuesInput: document.getElementById("valuesInput"),
+      applyBtn: document.getElementById("applyBtn"),
+      randomBtn: document.getElementById("randomBtn"),
+      configHint: document.getElementById("configHint"),
+      updateIndexInput: document.getElementById("updateIndexInput"),
+      deltaInput: document.getElementById("deltaInput"),
+      queryLeftInput: document.getElementById("queryLeftInput"),
+      queryRightInput: document.getElementById("queryRightInput"),
+      structureMode: document.getElementById("structureMode"),
+      updateMode: document.getElementById("updateMode"),
+      queryMode: document.getElementById("queryMode"),
+      arrayStage: document.getElementById("arrayStage"),
+      nodeGrid: document.getElementById("nodeGrid"),
+      treeStage: document.getElementById("treeStage"),
+      treeSummary: document.getElementById("treeSummary"),
+      stepCounter: document.getElementById("stepCounter"),
+      modeLabel: document.getElementById("modeLabel"),
+      progressFill: document.getElementById("progressFill"),
+      stepTitle: document.getElementById("stepTitle"),
+      stepNote: document.getElementById("stepNote"),
+      formulaBox: document.getElementById("formulaBox"),
+      answerBox: document.getElementById("answerBox"),
+      nodeFact: document.getElementById("nodeFact"),
+      intervalFact: document.getElementById("intervalFact"),
+      answerFact: document.getElementById("answerFact"),
+      pathFact: document.getElementById("pathFact"),
+      prevBtn: document.getElementById("prevBtn"),
+      playBtn: document.getElementById("playBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      speedInput: document.getElementById("speedInput")
+    };
+
+    let values = [0, 7, 2, 6, 3, 9, 1, 5, 4];
+    let n = values.length - 1;
+    let treeData = buildSegmentTree(values);
+    let layout = buildLayout(treeData, n);
+    let steps = [];
+    let currentStep = 0;
+    let currentMode = "structure";
+    let playTimer = null;
+
+    function rebuildState(nextValues, modeToKeep) {
+      stopPlaying();
+      values = nextValues.slice(0, MAX_N + 1);
+      n = values.length - 1;
+      treeData = buildSegmentTree(values);
+      layout = buildLayout(treeData, n);
+      syncInputsToState();
+      currentMode = modeToKeep || currentMode;
+      steps = makeStepsForMode(currentMode);
+      currentStep = 0;
+      render();
+    }
+
+    function buildSegmentTree(arr) {
+      const nodeMap = new Map();
+      let maxDepth = 0;
+      let maxIndex = 1;
+
+      function dfs(index, left, right, depth, parent) {
+        maxDepth = Math.max(maxDepth, depth);
+        maxIndex = Math.max(maxIndex, index);
+        const node = {
+          index,
+          left,
+          right,
+          depth,
+          parent,
+          leftChild: null,
+          rightChild: null,
+          sum: 0
+        };
+        nodeMap.set(index, node);
+
+        if (left === right) {
+          node.sum = arr[left];
+          return node.sum;
+        }
+
+        const mid = (left + right) >> 1;
+        node.leftChild = index * 2;
+        node.rightChild = index * 2 + 1;
+        const leftSum = dfs(node.leftChild, left, mid, depth + 1, index);
+        const rightSum = dfs(node.rightChild, mid + 1, right, depth + 1, index);
+        node.sum = leftSum + rightSum;
+        return node.sum;
+      }
+
+      dfs(1, 1, arr.length - 1, 0, null);
+      const order = Array.from(nodeMap.keys()).sort((a, b) => a - b);
+      const byLevel = Array.from(nodeMap.values()).sort((a, b) => a.depth - b.depth || a.index - b.index);
+      const edges = [];
+
+      byLevel.forEach((node) => {
+        if (node.leftChild && nodeMap.has(node.leftChild)) {
+          edges.push({ id: `node-${node.leftChild}->node-${node.index}`, from: `node-${node.leftChild}`, to: `node-${node.index}` });
+        }
+        if (node.rightChild && nodeMap.has(node.rightChild)) {
+          edges.push({ id: `node-${node.rightChild}->node-${node.index}`, from: `node-${node.rightChild}`, to: `node-${node.index}` });
+        }
+      });
+
+      for (let i = 1; i <= arr.length - 1; i += 1) {
+        const leaf = byLevel.find((node) => node.left === i && node.right === i);
+        if (leaf) {
+          edges.push({ id: `a-${i}->node-${leaf.index}`, from: `a-${i}`, to: `node-${leaf.index}` });
+        }
+      }
+
+      const valueArray = Array(maxIndex + 1).fill(null);
+      order.forEach((index) => {
+        valueArray[index] = nodeMap.get(index).sum;
+      });
+
+      return {
+        nodeMap,
+        order,
+        byLevel,
+        edges,
+        maxDepth,
+        maxIndex,
+        valueArray
+      };
+    }
+
+    function buildLayout(data, size) {
+      const baseY = TREE_TOP + data.maxDepth * TREE_LEVEL_GAP + TREE_NODE_H + 120;
+      const width = TREE_MARGIN_X * 2 + Math.max(size - 1, 0) * TREE_STEP + TREE_NODE_W;
+      const height = baseY + TREE_BASE_H + 42;
+      const nodeBoxes = [];
+      const baseBoxes = [];
+
+      data.byLevel.forEach((node) => {
+        const centerX = intervalCenter(node.left, node.right);
+        const y = TREE_TOP + node.depth * TREE_LEVEL_GAP;
+        nodeBoxes.push({
+          id: `node-${node.index}`,
+          index: node.index,
+          left: node.left,
+          right: node.right,
+          centerX,
+          centerY: y + TREE_NODE_H / 2,
+          x: centerX - TREE_NODE_W / 2,
+          y
+        });
+      });
+
+      for (let i = 1; i <= size; i += 1) {
+        const centerX = leafCenter(i);
+        baseBoxes.push({
+          id: `a-${i}`,
+          index: i,
+          centerX,
+          centerY: baseY + TREE_BASE_H / 2,
+          x: centerX - TREE_BASE_W / 2,
+          y: baseY
+        });
+      }
+
+      return {
+        width,
+        height,
+        baseY,
+        nodeBoxes,
+        baseBoxes
+      };
+    }
+
+    function makeStepsForMode(mode) {
+      if (mode === "update") {
+        return makeUpdateStepsFromInputs();
+      }
+      if (mode === "query") {
+        return makeQueryStepsFromInputs();
+      }
+      return makeStructureSteps();
+    }
+
+    function makeStructureSteps() {
+      const made = [createBaseStep({
+        mode: "structure",
+        modeLabel: "结构",
+        title: "线段树的结构总览",
+        note: "每个节点 tree[p] 都维护一个区间 [l, r] 的区间和。叶子节点对应单个元素，父节点由左右儿子合并而来。",
+        formula: "叶子：tree[p] = a[i]\n父节点：tree[p] = tree[p * 2] + tree[p * 2 + 1]",
+        nodeText: "按层查看每个节点",
+        intervalText: "区间由节点负责维护",
+        answerText: `根节点总和 = ${treeData.valueArray[1]}`,
+        pathText: "从根节点向下看",
+        answer: ""
+      })];
+
+      treeData.byLevel.forEach((node) => {
+        const step = createBaseStep({
+          mode: "structure",
+          modeLabel: "结构",
+          title: `观察 tree[${node.index}]`,
+          note: node.left === node.right
+            ? `这是叶子节点，对应单个元素 a[${node.left}]。`
+            : `这个节点负责区间 [${node.left}, ${node.right}]，由左右儿子两个子区间合并得到。`,
+          formula: node.left === node.right
+            ? `tree[${node.index}] = a[${node.left}] = ${treeData.valueArray[node.index]}`
+            : `tree[${node.index}] = tree[${node.leftChild}] + tree[${node.rightChild}]\n= ${treeData.valueArray[node.leftChild]} + ${treeData.valueArray[node.rightChild]} = ${treeData.valueArray[node.index]}`,
+          nodeText: `tree[${node.index}]`,
+          intervalText: `[${node.left}, ${node.right}]`,
+          answerText: `节点值 = ${treeData.valueArray[node.index]}`,
+          pathText: node.left === node.right
+            ? `a[${node.left}] -> tree[${node.index}]`
+            : `tree[${node.leftChild}] + tree[${node.rightChild}] -> tree[${node.index}]`,
+          answer: ""
+        });
+
+        addRangeMarks(step.arrayMarks, node.left, node.right, "covered", "structure");
+        addNodeMark(step.nodeMarks, node.index, "current", "structure");
+
+        if (node.left === node.right) {
+          addEdgeMark(step.edgeMarks, `a-${node.left}->node-${node.index}`, "current", "structure");
+          addBaseMark(step.baseMarks, node.left, "current", "structure");
+        } else {
+          addNodeMark(step.nodeMarks, node.leftChild, "visited");
+          addNodeMark(step.nodeMarks, node.rightChild, "visited");
+          addEdgeMark(step.edgeMarks, `node-${node.leftChild}->node-${node.index}`, "current", "structure");
+          addEdgeMark(step.edgeMarks, `node-${node.rightChild}->node-${node.index}`, "current", "structure");
+        }
+
+        made.push(step);
+      });
+
+      made.push(createBaseStep({
+        mode: "structure",
+        modeLabel: "结构",
+        title: "结构关系看完了",
+        note: "线段树的每个节点都对应一个区间。切换到“单点加”可以看更新路径，切换到“区间和”可以看查询时选择了哪些节点。",
+        formula: "更新：沿根到叶子的路径修改，再一路回溯\n查询：只累加被 [L, R] 完整覆盖的节点",
+        nodeText: "所有节点都按区间组织",
+        intervalText: `[1, ${n}]`,
+        answerText: `根节点总和 = ${treeData.valueArray[1]}`,
+        pathText: "根节点管理整个数组",
+        answer: "线段树的核心是“把区间递归拆成左右两半”。"
+      }));
+
+      return made;
+    }
+
+    function makeUpdateStepsFromInputs() {
+      const target = parseBoundedIndex(els.updateIndexInput, 1);
+      let delta = Number.parseInt(els.deltaInput.value, 10);
+      if (!Number.isFinite(delta)) {
+        delta = 1;
+      }
+      els.deltaInput.value = delta;
+
+      const path = getUpdatePath(target);
+      const pathText = path.map((node) => `tree[${node.index}]`).join(" -> ");
+      const changedValues = values.slice();
+      changedValues[target] += delta;
+      const currentTree = treeData.valueArray.slice();
+      const made = [createBaseStep({
+        mode: "update",
+        modeLabel: "单点加",
+        title: `准备执行 add(${target}, ${delta})`,
+        note: `单点加会先修改 a[${target}]，然后沿着根到叶子的路径更新相关节点。`,
+        formula: `a[${target}] += ${delta}\n修改路径：${pathText}`,
+        nodeText: `目标叶子在 tree[${path[path.length - 1].index}]`,
+        intervalText: `[${target}, ${target}]`,
+        answerText: `当前总和 = ${treeData.valueArray[1]}`,
+        pathText,
+        answer: ""
+      })];
+      addBaseMark(made[0].baseMarks, target, "source");
+      addArrayMark(made[0].arrayMarks, target, "source");
+
+      made.push(createBaseStep({
+        mode: "update",
+        modeLabel: "单点加",
+        title: `先改 a[${target}]`,
+        note: `原数组上的值先变化，然后这次增量会反映到路径上的每个线段树节点。`,
+        formula: `a[${target}] : ${values[target]} -> ${changedValues[target]}`,
+        nodeText: "还没有修改树节点",
+        intervalText: `[${target}, ${target}]`,
+        answerText: `当前总和仍显示旧值 = ${treeData.valueArray[1]}`,
+        pathText,
+        answer: ""
+      }, changedValues, currentTree));
+      addBaseMark(made[1].baseMarks, target, "source");
+      addArrayMark(made[1].arrayMarks, target, "source");
+
+      const visitedDown = [];
+      for (let i = 0; i < path.length - 1; i += 1) {
+        const node = path[i];
+        const nextNode = path[i + 1];
+        const mid = (node.left + node.right) >> 1;
+        const goLeft = target <= mid;
+        const step = createBaseStep({
+          mode: "update",
+          modeLabel: "单点加",
+          title: `进入 tree[${node.index}]`,
+          note: `当前节点负责区间 [${node.left}, ${node.right}]。因为 x = ${target} ${goLeft ? "<=" : ">"} mid = ${mid}，所以继续走向${goLeft ? "左儿子" : "右儿子"}。`,
+          formula: `mid = (${node.left} + ${node.right}) >> 1 = ${mid}\n下一步：tree[${nextNode.index}]`,
+          nodeText: `tree[${node.index}]`,
+          intervalText: `[${node.left}, ${node.right}]`,
+          answerText: `最终会给这个节点加上 ${delta}`,
+          pathText,
+          answer: ""
+        }, changedValues, currentTree);
+
+        visitedDown.forEach((visitedNode) => addNodeMark(step.nodeMarks, visitedNode.index, "visited"));
+        addNodeMark(step.nodeMarks, node.index, "current", "update");
+        addNodeMark(step.nodeMarks, nextNode.index, "visited");
+        addRangeMarks(step.arrayMarks, node.left, node.right, "covered", "update");
+        addBaseMark(step.baseMarks, target, "source");
+        addArrayMark(step.arrayMarks, target, "source");
+        addEdgeMark(step.edgeMarks, `node-${nextNode.index}->node-${node.index}`, "current", "update");
+        visitedDown.push(node);
+        made.push(step);
+      }
+
+      const leafNode = path[path.length - 1];
+      const leafBefore = currentTree[leafNode.index];
+      currentTree[leafNode.index] += delta;
+      const leafStep = createBaseStep({
+        mode: "update",
+        modeLabel: "单点加",
+        title: `更新叶子 tree[${leafNode.index}]`,
+        note: `叶子节点只负责单个位置 [${target}, ${target}]，所以它的值和 a[${target}] 一起增加 ${delta}。`,
+        formula: `tree[${leafNode.index}] : ${leafBefore} -> ${currentTree[leafNode.index]}`,
+        nodeText: `tree[${leafNode.index}]`,
+        intervalText: `[${leafNode.left}, ${leafNode.right}]`,
+        answerText: `叶子值 = ${currentTree[leafNode.index]}`,
+        pathText,
+        answer: ""
+      }, changedValues, currentTree);
+      visitedDown.forEach((visitedNode) => addNodeMark(leafStep.nodeMarks, visitedNode.index, "visited"));
+      addNodeMark(leafStep.nodeMarks, leafNode.index, "current", "update");
+      addRangeMarks(leafStep.arrayMarks, leafNode.left, leafNode.right, "covered", "update");
+      addBaseMark(leafStep.baseMarks, target, "source");
+      addArrayMark(leafStep.arrayMarks, target, "source");
+      addEdgeMark(leafStep.edgeMarks, `a-${target}->node-${leafNode.index}`, "current", "update");
+      made.push(leafStep);
+
+      const donePath = [leafNode.index];
+      for (let i = path.length - 2; i >= 0; i -= 1) {
+        const node = path[i];
+        const leftSum = currentTree[node.leftChild];
+        const rightSum = currentTree[node.rightChild];
+        const before = currentTree[node.index];
+        currentTree[node.index] = leftSum + rightSum;
+        donePath.push(node.index);
+
+        const step = createBaseStep({
+          mode: "update",
+          modeLabel: "单点加",
+          title: `回溯更新 tree[${node.index}]`,
+          note: `从儿子回到父节点后，要重新用左右儿子的值合并出当前区间和。`,
+          formula: `tree[${node.index}] = tree[${node.leftChild}] + tree[${node.rightChild}]\n= ${leftSum} + ${rightSum} = ${currentTree[node.index]}（原来是 ${before}）`,
+          nodeText: `tree[${node.index}]`,
+          intervalText: `[${node.left}, ${node.right}]`,
+          answerText: `当前根节点总和 = ${currentTree[1]}`,
+          pathText,
+          answer: i === 0 ? `更新完成：a[${target}] = ${changedValues[target]}，根节点总和 = ${currentTree[1]}` : ""
+        }, changedValues, currentTree);
+
+        path.forEach((pathNode) => {
+          if (pathNode.index !== node.index) {
+            addNodeMark(step.nodeMarks, pathNode.index, "visited");
+          }
+        });
+        addNodeMark(step.nodeMarks, node.index, "current", "update");
+        addNodeMark(step.nodeMarks, node.leftChild, "visited");
+        addNodeMark(step.nodeMarks, node.rightChild, "visited");
+        addRangeMarks(step.arrayMarks, node.left, node.right, "covered", "update");
+        addBaseMark(step.baseMarks, target, "source");
+        addArrayMark(step.arrayMarks, target, "source");
+        addEdgeMark(step.edgeMarks, `node-${node.leftChild}->node-${node.index}`, "current", "update");
+        addEdgeMark(step.edgeMarks, `node-${node.rightChild}->node-${node.index}`, "current", "update");
+        made.push(step);
+      }
+
+      const finalStep = createBaseStep({
+        mode: "update",
+        modeLabel: "单点加",
+        title: "单点加结束",
+        note: "只有根到叶子的这一条路径上的节点会变化，这就是线段树单点更新的关键。",
+        formula: `路径：${pathText}\n新的根节点总和 = ${currentTree[1]}`,
+        nodeText: `共更新 ${path.length} 个节点`,
+        intervalText: `[1, ${n}]`,
+        answerText: `新的总和 = ${currentTree[1]}`,
+        pathText,
+        answer: `a[${target}] 变为 ${changedValues[target]}，所有相关区间和已经同步。`
+      }, changedValues, currentTree);
+      path.forEach((node) => addNodeMark(finalStep.nodeMarks, node.index, "answer"));
+      addBaseMark(finalStep.baseMarks, target, "answer");
+      addArrayMark(finalStep.arrayMarks, target, "answer");
+      made.push(finalStep);
+
+      return made;
+    }
+
+    function makeQueryStepsFromInputs() {
+      const query = parseQueryInputs();
+      const events = [];
+      collectQueryEvents(1, query.left, query.right, events);
+      const takeEvents = events.filter((event) => event.type === "take");
+      if (takeEvents.length > 0) {
+        takeEvents[takeEvents.length - 1].isLast = true;
+      }
+      const pathText = events.map((event) => `tree[${event.node.index}]`).join(" -> ");
+      const taken = [];
+      let running = 0;
+
+      const made = [createBaseStep({
+        mode: "query",
+        modeLabel: "区间和",
+        title: `准备查询 sum(${query.left}, ${query.right})`,
+        note: `区间查询会递归往下找，只把那些被 [${query.left}, ${query.right}] 完整覆盖的节点加到答案里。`,
+        formula: `query(L, R) = Σ 被完整覆盖节点的值\n本次查询区间：[${query.left}, ${query.right}]`,
+        nodeText: "从根节点开始判断",
+        intervalText: `[${query.left}, ${query.right}]`,
+        answerText: "当前答案 = 0",
+        pathText,
+        answer: ""
+      })];
+      addRangeMarks(made[0].arrayMarks, query.left, query.right, "covered", "query");
+
+      events.forEach((event) => {
+        if (event.type === "split") {
+          const node = event.node;
+          const goText = `${event.goLeft ? `左儿子 tree[${node.leftChild}]` : ""}${event.goLeft && event.goRight ? "，" : ""}${event.goRight ? `右儿子 tree[${node.rightChild}]` : ""}`;
+          const step = createBaseStep({
+            mode: "query",
+            modeLabel: "区间和",
+            title: `检查 tree[${node.index}]`,
+            note: `当前节点区间 [${node.left}, ${node.right}] 与查询区间部分重叠，所以还不能直接取值，需要继续递归到 ${goText}。`,
+            formula: `mid = (${node.left} + ${node.right}) >> 1 = ${event.mid}\n继续向 ${goText} 递归`,
+            nodeText: `tree[${node.index}]`,
+            intervalText: `[${node.left}, ${node.right}]`,
+            answerText: `当前答案 = ${running}`,
+            pathText,
+            answer: ""
+          });
+
+          taken.forEach((index) => addNodeMark(step.nodeMarks, index, "visited"));
+          event.passed.forEach((index) => addNodeMark(step.nodeMarks, index, "visited"));
+          addNodeMark(step.nodeMarks, node.index, "current", "query");
+          if (event.goLeft) {
+            addNodeMark(step.nodeMarks, node.leftChild, "visited");
+            addEdgeMark(step.edgeMarks, `node-${node.leftChild}->node-${node.index}`, "current", "query");
+          }
+          if (event.goRight) {
+            addNodeMark(step.nodeMarks, node.rightChild, "visited");
+            addEdgeMark(step.edgeMarks, `node-${node.rightChild}->node-${node.index}`, "current", "query");
+          }
+          addRangeMarks(step.arrayMarks, Math.max(node.left, query.left), Math.min(node.right, query.right), "covered", "query");
+          made.push(step);
+          return;
+        }
+
+        const node = event.node;
+        const before = running;
+        running += treeData.valueArray[node.index];
+        taken.push(node.index);
+        const step = createBaseStep({
+          mode: "query",
+          modeLabel: "区间和",
+          title: `累加 tree[${node.index}]`,
+          note: `当前节点区间 [${node.left}, ${node.right}] 被查询区间完整覆盖，可以直接把它的值加入答案。`,
+          formula: `ans : ${before} + tree[${node.index}](${treeData.valueArray[node.index]}) = ${running}`,
+          nodeText: `tree[${node.index}]`,
+          intervalText: `[${node.left}, ${node.right}]`,
+          answerText: `当前答案 = ${running}`,
+          pathText,
+          answer: event.isLast ? `sum(${query.left}, ${query.right}) = ${running}` : ""
+        });
+
+        event.passed.forEach((index) => addNodeMark(step.nodeMarks, index, "visited"));
+        taken.slice(0, -1).forEach((index) => addNodeMark(step.nodeMarks, index, "visited"));
+        addNodeMark(step.nodeMarks, node.index, "current", "query");
+        addRangeMarks(step.arrayMarks, node.left, node.right, "covered", "query");
+        made.push(step);
+      });
+
+      const finalStep = createBaseStep({
+        mode: "query",
+        modeLabel: "区间和",
+        title: "区间和结束",
+        note: "查询答案由这些被完整覆盖的节点拼出来。它们互不重叠，合起来刚好覆盖目标区间。",
+        formula: taken.map((index) => {
+          const node = treeData.nodeMap.get(index);
+          return `tree[${index}] 负责 [${node.left}, ${node.right}] = ${treeData.valueArray[index]}`;
+        }).join("\n"),
+        nodeText: `一共选中 ${taken.length} 个节点`,
+        intervalText: `[${query.left}, ${query.right}]`,
+        answerText: `最终答案 = ${running}`,
+        pathText,
+        answer: `sum(${query.left}, ${query.right}) = ${running}`
+      });
+      taken.forEach((index) => addNodeMark(finalStep.nodeMarks, index, "answer"));
+      addRangeMarks(finalStep.arrayMarks, query.left, query.right, "answer", "query");
+      made.push(finalStep);
+
+      return made;
+    }
+
+    function collectQueryEvents(index, left, right, events, passedStack = []) {
+      const node = treeData.nodeMap.get(index);
+      if (left <= node.left && node.right <= right) {
+        events.push({
+          type: "take",
+          node,
+          passed: passedStack.slice(),
+          isLast: false
+        });
+        return;
+      }
+
+      const mid = (node.left + node.right) >> 1;
+      const goLeft = left <= mid;
+      const goRight = right > mid;
+      events.push({
+        type: "split",
+        node,
+        mid,
+        goLeft,
+        goRight,
+        passed: passedStack.slice()
+      });
+
+      const nextPassed = passedStack.concat(node.index);
+      if (goLeft) {
+        collectQueryEvents(node.leftChild, left, right, events, nextPassed);
+      }
+      if (goRight) {
+        collectQueryEvents(node.rightChild, left, right, events, nextPassed);
+      }
+    }
+
+    function getUpdatePath(target) {
+      const path = [];
+      let index = 1;
+
+      while (true) {
+        const node = treeData.nodeMap.get(index);
+        path.push(node);
+        if (node.left === node.right) {
+          break;
+        }
+        const mid = (node.left + node.right) >> 1;
+        index = target <= mid ? node.leftChild : node.rightChild;
+      }
+
+      return path;
+    }
+
+    function createBaseStep(meta, arraySnapshot, treeSnapshot) {
+      return {
+        mode: meta.mode,
+        modeLabel: meta.modeLabel,
+        title: meta.title,
+        note: meta.note,
+        formula: meta.formula,
+        nodeText: meta.nodeText || "-",
+        intervalText: meta.intervalText || "-",
+        answerText: meta.answerText || "-",
+        pathText: meta.pathText || "-",
+        answer: meta.answer || "",
+        arrayValues: arraySnapshot ? arraySnapshot.slice() : values.slice(),
+        treeValues: treeSnapshot ? treeSnapshot.slice() : treeData.valueArray.slice(),
+        arrayMarks: new Map(),
+        baseMarks: new Map(),
+        nodeMarks: new Map(),
+        edgeMarks: new Map()
+      };
+    }
+
+    function render() {
+      const step = steps[currentStep];
+      renderArray(step);
+      renderNodeGrid(step);
+      renderTree(step);
+      els.stepCounter.textContent = `${currentStep + 1} / ${steps.length}`;
+      els.modeLabel.textContent = step.modeLabel;
+      els.progressFill.style.width = steps.length > 1
+        ? `${(currentStep / (steps.length - 1)) * 100}%`
+        : "100%";
+      els.stepTitle.textContent = step.title;
+      els.stepNote.textContent = step.note;
+      els.formulaBox.textContent = step.formula;
+      els.answerBox.textContent = step.answer || " ";
+      els.nodeFact.textContent = step.nodeText;
+      els.intervalFact.textContent = step.intervalText;
+      els.answerFact.textContent = step.answerText;
+      els.pathFact.textContent = step.pathText;
+      els.prevBtn.disabled = currentStep === 0;
+      els.nextBtn.disabled = currentStep === steps.length - 1;
+      els.structureMode.classList.toggle("active", currentMode === "structure");
+      els.updateMode.classList.toggle("active", currentMode === "update");
+      els.queryMode.classList.toggle("active", currentMode === "query");
+    }
+
+    function renderArray(step) {
+      const gridTemplate = `${LABEL_W}px repeat(${n}, ${CELL_W}px)`;
+      const cells = [`<div class="row-tag">a[i]</div>`];
+      for (let i = 1; i <= n; i += 1) {
+        const classes = ["array-cell", ...markClasses(step.arrayMarks, i)];
+        cells.push(`<div class="${classes.join(" ")}">
+          <div class="idx">${i}</div>
+          <div class="val">${escapeHtml(String(step.arrayValues[i]))}</div>
+        </div>`);
+      }
+
+      els.arrayStage.innerHTML = `<div class="value-row" style="grid-template-columns:${gridTemplate};">${cells.join("")}</div>`;
+      els.arrayStage.style.minWidth = `${LABEL_W + n * CELL_W + (n + 1) * 8}px`;
+    }
+
+    function renderNodeGrid(step) {
+      els.nodeGrid.innerHTML = treeData.order.map((index) => {
+        const node = treeData.nodeMap.get(index);
+        const classes = ["node-card", ...markClasses(step.nodeMarks, index)];
+        return `<div class="${classes.join(" ")}">
+          <div class="node-id">tree[${index}]</div>
+          <div class="node-range">[${node.left}, ${node.right}]</div>
+          <div class="node-sum">${escapeHtml(String(step.treeValues[index]))}</div>
+        </div>`;
+      }).join("");
+    }
+
+    function renderTree(step) {
+      els.treeSummary.textContent = `每个节点维护一个区间 [l, r] 的区间和，当前 n = ${n}`;
+      els.treeStage.style.width = `${layout.width}px`;
+      els.treeStage.style.height = `${layout.height}px`;
+
+      const nodeLookup = new Map();
+      layout.nodeBoxes.forEach((node) => nodeLookup.set(node.id, node));
+      layout.baseBoxes.forEach((node) => nodeLookup.set(node.id, node));
+
+      const lineHtml = treeData.edges.map((edge) => {
+        const fromNode = nodeLookup.get(edge.from);
+        const toNode = nodeLookup.get(edge.to);
+        const classes = markClasses(step.edgeMarks, edge.id);
+        return `<line class="${classes.join(" ")}" x1="${fromNode.centerX}" y1="${fromNode.y}" x2="${toNode.centerX}" y2="${toNode.y + TREE_NODE_H}" marker-end="url(#segArrow)"></line>`;
+      }).join("");
+
+      const nodeHtml = layout.nodeBoxes.map((box) => {
+        const classes = ["tree-node", ...markClasses(step.nodeMarks, box.index)];
+        return `<div class="${classes.join(" ")}" style="left:${box.x}px; top:${box.y}px;">
+          <div class="name">tree[${box.index}]</div>
+          <div class="meta">[${box.left}, ${box.right}]</div>
+          <div class="sum">${escapeHtml(String(step.treeValues[box.index]))}</div>
+        </div>`;
+      }).join("");
+
+      const baseHtml = layout.baseBoxes.map((box) => {
+        const classes = ["tree-base", ...markClasses(step.baseMarks, box.index, step.arrayMarks)];
+        return `<div class="${classes.join(" ")}" style="left:${box.x}px; top:${box.y}px;">
+          <div class="name">a[${box.index}]</div>
+          <div class="meta">${escapeHtml(String(step.arrayValues[box.index]))}</div>
+        </div>`;
+      }).join("");
+
+      els.treeStage.innerHTML = `
+        <svg class="tree-lines" viewBox="0 0 ${layout.width} ${layout.height}" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <marker id="segArrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"></path>
+            </marker>
+          </defs>
+          ${lineHtml}
+        </svg>
+        ${nodeHtml}
+        ${baseHtml}
+      `;
+    }
+
+    function addArrayMark(targetMap, index, role, mode) {
+      if (!targetMap.has(index)) {
+        targetMap.set(index, new Set());
+      }
+      targetMap.get(index).add(`role-${role}`);
+      if (mode) {
+        targetMap.get(index).add(`mode-${mode}`);
+      }
+    }
+
+    function addBaseMark(targetMap, index, role, mode) {
+      if (!targetMap.has(index)) {
+        targetMap.set(index, new Set());
+      }
+      targetMap.get(index).add(`role-${role}`);
+      if (mode) {
+        targetMap.get(index).add(`mode-${mode}`);
+      }
+    }
+
+    function addRangeMarks(targetMap, left, right, role, mode) {
+      for (let i = left; i <= right; i += 1) {
+        addArrayMark(targetMap, i, role, mode);
+      }
+    }
+
+    function addNodeMark(targetMap, index, role, mode) {
+      if (!targetMap.has(index)) {
+        targetMap.set(index, new Set());
+      }
+      targetMap.get(index).add(`role-${role}`);
+      if (mode) {
+        targetMap.get(index).add(`mode-${mode}`);
+      }
+    }
+
+    function addEdgeMark(targetMap, id, role, mode) {
+      if (!targetMap.has(id)) {
+        targetMap.set(id, new Set());
+      }
+      targetMap.get(id).add(`role-${role}`);
+      if (mode) {
+        targetMap.get(id).add(`mode-${mode}`);
+      }
+    }
+
+    function markClasses(primaryMap, key, fallbackMap) {
+      const classes = [];
+      if (fallbackMap && fallbackMap.has(key)) {
+        fallbackMap.get(key).forEach((name) => classes.push(name));
+      }
+      if (primaryMap.has(key)) {
+        primaryMap.get(key).forEach((name) => classes.push(name));
+      }
+      return classes;
+    }
+
+    function switchMode(mode) {
+      stopPlaying();
+      currentMode = mode;
+      steps = makeStepsForMode(mode);
+      currentStep = 0;
+      render();
+    }
+
+    function applyArrayFromInputs() {
+      const wantedN = clamp(Number.parseInt(els.nInput.value, 10) || n, 1, MAX_N);
+      const parsed = parseValues(els.valuesInput.value);
+      if (parsed.length !== wantedN) {
+        showHint(`当前 n = ${wantedN}，请输入恰好 ${wantedN} 个整数。`, true);
+        els.nInput.value = wantedN;
+        return;
+      }
+      showHint(`已应用 n = ${wantedN} 的数组。`, false);
+      rebuildState([0, ...parsed], currentMode);
+    }
+
+    function randomArray() {
+      const wantedN = clamp(Number.parseInt(els.nInput.value, 10) || n, 1, MAX_N);
+      const next = Array.from({ length: wantedN }, () => Math.floor(Math.random() * 17) + 1);
+      els.valuesInput.value = next.join(" ");
+      showHint(`已生成 n = ${wantedN} 的随机数组。`, false);
+      rebuildState([0, ...next], currentMode);
+    }
+
+    function parseValues(raw) {
+      return raw
+        .trim()
+        .split(/[\s,，]+/)
+        .filter(Boolean)
+        .map((item) => Number(item))
+        .filter((item) => Number.isFinite(item) && Number.isInteger(item));
+    }
+
+    function parseBoundedIndex(input, fallback) {
+      let value = Number.parseInt(input.value, 10);
+      if (!Number.isFinite(value)) {
+        value = fallback;
+      }
+      value = clamp(value, 1, n);
+      input.value = value;
+      return value;
+    }
+
+    function parseQueryInputs() {
+      let left = Number.parseInt(els.queryLeftInput.value, 10);
+      let right = Number.parseInt(els.queryRightInput.value, 10);
+      if (!Number.isFinite(left)) {
+        left = 1;
+      }
+      if (!Number.isFinite(right)) {
+        right = n;
+      }
+      left = clamp(left, 1, n);
+      right = clamp(right, 1, n);
+      if (left > right) {
+        const temp = left;
+        left = right;
+        right = temp;
+      }
+      els.queryLeftInput.value = left;
+      els.queryRightInput.value = right;
+      return { left, right };
+    }
+
+    function syncInputsToState() {
+      els.nInput.value = n;
+      els.valuesInput.value = values.slice(1).join(" ");
+      els.updateIndexInput.max = n;
+      els.queryLeftInput.max = n;
+      els.queryRightInput.max = n;
+
+      if (Number(els.updateIndexInput.value) > n || Number(els.updateIndexInput.value) < 1) {
+        els.updateIndexInput.value = Math.min(3, n);
+      }
+      if (Number(els.queryLeftInput.value) > n || Number(els.queryLeftInput.value) < 1) {
+        els.queryLeftInput.value = Math.min(3, n);
+      }
+      if (Number(els.queryRightInput.value) > n || Number(els.queryRightInput.value) < 1) {
+        els.queryRightInput.value = n;
+      }
+      parseQueryInputs();
+    }
+
+    function go(delta) {
+      currentStep = clamp(currentStep + delta, 0, steps.length - 1);
+      render();
+      if (currentStep === steps.length - 1) {
+        stopPlaying();
+      }
+    }
+
+    function togglePlaying() {
+      if (playTimer) {
+        stopPlaying();
+        return;
+      }
+      if (currentStep === steps.length - 1) {
+        currentStep = 0;
+        render();
+      }
+      els.playBtn.textContent = "暂停";
+      els.playBtn.title = "暂停";
+      els.playBtn.setAttribute("aria-label", "暂停");
+      playTimer = window.setInterval(() => go(1), Number(els.speedInput.value));
+    }
+
+    function stopPlaying() {
+      if (playTimer) {
+        window.clearInterval(playTimer);
+        playTimer = null;
+      }
+      els.playBtn.textContent = "播放";
+      els.playBtn.title = "自动播放";
+      els.playBtn.setAttribute("aria-label", "自动播放");
+    }
+
+    function showHint(text, isError) {
+      els.configHint.textContent = text;
+      els.configHint.classList.toggle("error", isError);
+    }
+
+    function leafCenter(index) {
+      return TREE_MARGIN_X + (index - 1) * TREE_STEP + TREE_NODE_W / 2;
+    }
+
+    function intervalCenter(left, right) {
+      return (leafCenter(left) + leafCenter(right)) / 2;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    els.applyBtn.addEventListener("click", applyArrayFromInputs);
+    els.randomBtn.addEventListener("click", randomArray);
+    els.structureMode.addEventListener("click", () => switchMode("structure"));
+    els.updateMode.addEventListener("click", () => switchMode("update"));
+    els.queryMode.addEventListener("click", () => switchMode("query"));
+    els.prevBtn.addEventListener("click", () => go(-1));
+    els.nextBtn.addEventListener("click", () => go(1));
+    els.resetBtn.addEventListener("click", () => {
+      stopPlaying();
+      currentStep = 0;
+      render();
+    });
+    els.playBtn.addEventListener("click", togglePlaying);
+    els.speedInput.addEventListener("input", () => {
+      if (playTimer) {
+        stopPlaying();
+        togglePlaying();
+      }
+    });
+    els.updateIndexInput.addEventListener("change", () => {
+      parseBoundedIndex(els.updateIndexInput, 1);
+      if (currentMode === "update") {
+        switchMode("update");
+      }
+    });
+    els.deltaInput.addEventListener("change", () => {
+      if (currentMode === "update") {
+        switchMode("update");
+      }
+    });
+    els.queryLeftInput.addEventListener("change", () => {
+      parseQueryInputs();
+      if (currentMode === "query") {
+        switchMode("query");
+      }
+    });
+    els.queryRightInput.addEventListener("change", () => {
+      parseQueryInputs();
+      if (currentMode === "query") {
+        switchMode("query");
+      }
+    });
+    els.nInput.addEventListener("change", () => {
+      const wantedN = clamp(Number.parseInt(els.nInput.value, 10) || n, 1, MAX_N);
+      els.nInput.value = wantedN;
+      showHint(`n 已设为 ${wantedN}，请输入 ${wantedN} 个整数后再应用。`, false);
+    });
+
+    rebuildState(values, "structure");
+  </script>
+</body>
+</html>
