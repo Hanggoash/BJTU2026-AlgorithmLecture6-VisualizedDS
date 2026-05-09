@@ -1,0 +1,1576 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>树状数组可视化</title>
+  <style>
+    :root {
+      --ink: #17212f;
+      --muted: #607089;
+      --line: #d9e1ec;
+      --panel: #ffffff;
+      --page: #f4f7fb;
+      --nav: #172232;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --teal: #0f766e;
+      --teal-soft: #ccfbf1;
+      --amber: #b45309;
+      --amber-soft: #fef3c7;
+      --rose: #be123c;
+      --rose-soft: #ffe4e6;
+      --green: #15803d;
+      --green-soft: #dcfce7;
+      --violet: #7c3aed;
+      --violet-soft: #ede9fe;
+      --shadow: 0 14px 32px rgba(21, 30, 45, 0.08);
+      --cell-w: 74px;
+      --label-w: 90px;
+      --tree-col-step: 96px;
+      --tree-storage-w: 70px;
+      --tree-bit-w: 172px;
+      --tree-bit-h: 64px;
+      --tree-base-w: 82px;
+      --tree-base-h: 50px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--page);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      padding: 17px 24px;
+      color: #ffffff;
+      background: var(--nav);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.15;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 7px 0 0;
+      color: #b9c5d5;
+      font-size: 13px;
+    }
+
+    .playbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .top-btn,
+    .mode-btn,
+    .apply-btn,
+    .random-btn {
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #eef4ff;
+      background: rgba(255, 255, 255, 0.08);
+      transition: transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+    }
+
+    .top-btn {
+      min-width: 40px;
+      padding: 0 10px;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .top-btn:hover,
+    .mode-btn:hover,
+    .apply-btn:hover,
+    .random-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.36);
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      transform: none;
+    }
+
+    .speed {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    .speed input {
+      width: 118px;
+      accent-color: #93c5fd;
+    }
+
+    .configbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 24px;
+      border-bottom: 1px solid #dfe6f0;
+      background: #ffffff;
+    }
+
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #334155;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .field input {
+      height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      color: #17212f;
+      background: #ffffff;
+    }
+
+    .field input[type="number"] {
+      width: 74px;
+      padding: 0 8px;
+    }
+
+    .field input[type="text"] {
+      width: min(520px, 48vw);
+      min-width: 260px;
+      padding: 0 10px;
+    }
+
+    .apply-btn,
+    .random-btn,
+    .mode-btn {
+      padding: 0 14px;
+      color: #17212f;
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .apply-btn {
+      color: #ffffff;
+      border-color: #1d4ed8;
+      background: #2563eb;
+    }
+
+    .mode-btn.active {
+      color: #ffffff;
+      border-color: #0f766e;
+      background: #0f766e;
+    }
+
+    .hint {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hint.error {
+      color: #b91c1c;
+    }
+
+    .stage {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 18px;
+      padding: 18px 24px 24px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #e7edf5;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+      font-weight: 740;
+      letter-spacing: 0;
+    }
+
+    .panel-head span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .data-scroll,
+    .tree-scroll {
+      overflow: auto;
+    }
+
+    .data-stage {
+      padding: 14px 14px 16px;
+    }
+
+    .value-row {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 10px;
+      align-items: stretch;
+    }
+
+    .value-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .row-tag {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 58px;
+      border-radius: 8px;
+      border: 1px solid #d6e0ec;
+      background: #f8fafc;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .data-cell {
+      position: relative;
+      min-height: 58px;
+      padding: 9px 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #d5deea;
+      background: #ffffff;
+      text-align: center;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+    }
+
+    .data-cell .idx {
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1.1;
+    }
+
+    .data-cell .val {
+      margin-top: 6px;
+      font-size: 17px;
+      line-height: 1.1;
+      font-weight: 760;
+      color: #17212f;
+    }
+
+    .data-cell.role-source {
+      border-color: #e11d48;
+      background: var(--rose-soft);
+      box-shadow: 0 10px 24px rgba(190, 18, 60, 0.15);
+    }
+
+    .data-cell.role-covered.mode-structure {
+      border-color: #3b82f6;
+      background: var(--blue-soft);
+    }
+
+    .data-cell.role-covered.mode-update {
+      border-color: #f59e0b;
+      background: #fff7d6;
+    }
+
+    .data-cell.role-covered.mode-query {
+      border-color: #14b8a6;
+      background: var(--teal-soft);
+    }
+
+    .data-cell.role-current.mode-update,
+    .data-cell.role-current.mode-query,
+    .data-cell.role-current.mode-structure,
+    .storage-cell.role-current,
+    .tree-node.role-current {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.15);
+    }
+
+    .data-cell.role-current.mode-structure,
+    .storage-cell.role-current.mode-structure,
+    .tree-node.role-current.mode-structure {
+      border-color: #2563eb;
+      background: var(--blue-soft);
+    }
+
+    .data-cell.role-current.mode-update,
+    .storage-cell.role-current.mode-update,
+    .tree-node.role-current.mode-update {
+      border-color: #d97706;
+      background: var(--amber-soft);
+      box-shadow: 0 12px 28px rgba(180, 83, 9, 0.18);
+    }
+
+    .data-cell.role-current.mode-query,
+    .storage-cell.role-current.mode-query,
+    .tree-node.role-current.mode-query {
+      border-color: #0f766e;
+      background: var(--teal-soft);
+      box-shadow: 0 12px 28px rgba(15, 118, 110, 0.16);
+    }
+
+    .data-cell.role-visited,
+    .storage-cell.role-visited,
+    .tree-node.role-visited {
+      border-color: #8b5cf6;
+      background: var(--violet-soft);
+    }
+
+    .data-cell.role-answer,
+    .storage-cell.role-answer,
+    .tree-node.role-answer {
+      border-color: #16a34a;
+      background: var(--green-soft);
+      box-shadow: 0 12px 28px rgba(21, 128, 61, 0.16);
+    }
+
+    .tree-stage-wrap {
+      padding: 16px 16px 18px;
+    }
+
+    .tree-stage {
+      position: relative;
+      min-height: 560px;
+    }
+
+    .tree-lines {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .tree-lines line {
+      stroke: #94a3b8;
+      stroke-width: 2;
+      opacity: 0.8;
+    }
+
+    .tree-lines line.role-current.mode-structure {
+      stroke: #2563eb;
+      stroke-width: 3;
+    }
+
+    .tree-lines line.role-current.mode-update {
+      stroke: #d97706;
+      stroke-width: 3;
+    }
+
+    .tree-lines line.role-current.mode-query {
+      stroke: #0f766e;
+      stroke-width: 3;
+    }
+
+    .tree-lines line.role-visited {
+      stroke: #8b5cf6;
+      stroke-width: 2.5;
+    }
+
+    .storage-cell,
+    .tree-node {
+      position: absolute;
+      border: 2px solid #334155;
+      background: #ffffff;
+      border-radius: 4px;
+      text-align: center;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+    }
+
+    .storage-cell {
+      width: var(--tree-storage-w);
+      min-height: 60px;
+      padding-top: 9px;
+      z-index: 2;
+    }
+
+    .storage-cell .name,
+    .tree-node .name {
+      font-size: 14px;
+      line-height: 1.1;
+      font-weight: 760;
+    }
+
+    .storage-cell .meta,
+    .tree-node .meta {
+      margin-top: 6px;
+      color: #475569;
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .tree-node.bit {
+      width: var(--tree-bit-w);
+      min-height: var(--tree-bit-h);
+      padding: 8px 10px;
+      z-index: 3;
+    }
+
+    .tree-node.base {
+      width: var(--tree-base-w);
+      min-height: var(--tree-base-h);
+      padding: 8px 6px;
+      z-index: 3;
+    }
+
+    .tree-node.base .name {
+      font-size: 13px;
+    }
+
+    .tree-node.base .meta {
+      font-size: 12px;
+      font-weight: 700;
+      color: #17212f;
+    }
+
+    .inspector {
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
+    }
+
+    .status {
+      padding: 16px 16px 10px;
+      border-bottom: 1px solid #e8eef5;
+    }
+
+    .step-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .progress-track {
+      margin-top: 10px;
+      height: 8px;
+      border-radius: 999px;
+      background: #e9eff7;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #3b82f6 0%, #0ea5e9 100%);
+      transition: width 0.18s ease;
+    }
+
+    .step-body {
+      padding: 16px;
+      border-bottom: 1px solid #e8eef5;
+    }
+
+    .step-body h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      line-height: 1.3;
+      font-weight: 760;
+    }
+
+    .step-body p {
+      margin: 0;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .formula,
+    .answer {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #dde6f0;
+      background: #f8fafc;
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .answer {
+      min-height: 46px;
+      background: #f5fff7;
+      border-color: #d6f0dc;
+      color: #14532d;
+      font-weight: 700;
+    }
+
+    .facts {
+      padding: 14px 16px;
+      border-bottom: 1px solid #e8eef5;
+    }
+
+    .facts-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .fact {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #dde6f0;
+      background: #f8fafc;
+    }
+
+    .fact-label {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .fact-value {
+      margin-top: 6px;
+      color: #17212f;
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .legend {
+      padding: 16px;
+    }
+
+    .legend h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .legend-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #334155;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      flex: none;
+      border-radius: 4px;
+      border: 1px solid #c8d3e1;
+      background: #ffffff;
+    }
+
+    .swatch.blue {
+      background: var(--blue-soft);
+      border-color: #2563eb;
+    }
+
+    .swatch.amber {
+      background: var(--amber-soft);
+      border-color: #d97706;
+    }
+
+    .swatch.teal {
+      background: var(--teal-soft);
+      border-color: #0f766e;
+    }
+
+    .swatch.rose {
+      background: var(--rose-soft);
+      border-color: #e11d48;
+    }
+
+    .swatch.violet {
+      background: var(--violet-soft);
+      border-color: #8b5cf6;
+    }
+
+    .swatch.green {
+      background: var(--green-soft);
+      border-color: #16a34a;
+    }
+
+    @media (max-width: 1180px) {
+      .stage {
+        grid-template-columns: 1fr;
+      }
+
+      .inspector {
+        grid-template-rows: auto auto auto auto;
+      }
+    }
+
+    @media (max-width: 880px) {
+      .topbar,
+      .configbar {
+        grid-template-columns: 1fr;
+      }
+
+      .playbar {
+        justify-content: flex-start;
+      }
+
+      .field input[type="text"] {
+        width: min(100%, 520px);
+        min-width: 220px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>树状数组可视化</h1>
+        <p>支持结构关系、单点加和前缀和查询动画，离线打开即可演示。</p>
+      </div>
+      <div class="playbar" aria-label="播放控制">
+        <button class="top-btn" id="prevBtn" type="button" title="上一步" aria-label="上一步">&lt;</button>
+        <button class="top-btn" id="playBtn" type="button" title="自动播放" aria-label="自动播放">播放</button>
+        <button class="top-btn" id="nextBtn" type="button" title="下一步" aria-label="下一步">&gt;</button>
+        <button class="top-btn" id="resetBtn" type="button" title="重置" aria-label="重置">重置</button>
+        <label class="speed">速度 <input id="speedInput" type="range" min="350" max="1600" step="50" value="850" /></label>
+      </div>
+    </header>
+
+    <section class="configbar" aria-label="数据与模式设置">
+      <div class="input-group">
+        <label class="field">n
+          <input id="nInput" type="number" min="1" max="20" value="8" />
+        </label>
+        <label class="field">数组
+          <input id="valuesInput" type="text" value="7 2 6 3 9 1 5 4" />
+        </label>
+        <button class="apply-btn" id="applyBtn" type="button">应用数组</button>
+        <button class="random-btn" id="randomBtn" type="button">随机数组</button>
+        <span class="hint" id="configHint">最多 20 个整数，支持空格或逗号分隔。</span>
+      </div>
+
+      <div class="input-group">
+        <label class="field">位置 x
+          <input id="updateIndexInput" type="number" min="1" max="8" value="3" />
+        </label>
+        <label class="field">增量 delta
+          <input id="deltaInput" type="number" value="5" />
+        </label>
+        <label class="field">前缀 x
+          <input id="queryIndexInput" type="number" min="1" max="8" value="7" />
+        </label>
+        <button class="mode-btn active" id="structureMode" type="button">结构关系</button>
+        <button class="mode-btn" id="updateMode" type="button">单点加</button>
+        <button class="mode-btn" id="queryMode" type="button">前缀和</button>
+      </div>
+    </section>
+
+    <main class="stage">
+      <div class="workspace">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>数组 / lowbit / 树状数组</h2>
+            <span>单元格会跟随当前动画步骤同步变化</span>
+          </div>
+          <div class="data-scroll">
+            <div class="data-stage" id="dataStage"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>树形结构关系</h2>
+            <span id="treeSummary">c[i] 覆盖区间 [i - lowbit(i) + 1, i]</span>
+          </div>
+          <div class="tree-scroll">
+            <div class="tree-stage-wrap">
+              <div class="tree-stage" id="treeStage"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="panel inspector">
+        <div class="status">
+          <div class="step-topline">
+            <span id="stepCounter">1 / 1</span>
+            <span id="modeLabel">结构</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <div class="step-body">
+          <h2 id="stepTitle"></h2>
+          <p id="stepNote"></p>
+          <div class="formula" id="formulaBox"></div>
+          <div class="answer" id="answerBox"></div>
+        </div>
+
+        <div class="facts">
+          <div class="facts-grid">
+            <div class="fact">
+              <div class="fact-label">访问路径</div>
+              <div class="fact-value" id="pathFact">-</div>
+            </div>
+            <div class="fact">
+              <div class="fact-label">当前区间</div>
+              <div class="fact-value" id="rangeFact">-</div>
+            </div>
+            <div class="fact">
+              <div class="fact-label">当前 lowbit</div>
+              <div class="fact-value" id="lowbitFact">-</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <h3>颜色</h3>
+          <div class="legend-list">
+            <div class="legend-item"><span class="swatch blue"></span><span>结构模式下当前正在讲解的 c[i] 及其覆盖区间</span></div>
+            <div class="legend-item"><span class="swatch rose"></span><span>单点加时被修改的 a[x]</span></div>
+            <div class="legend-item"><span class="swatch amber"></span><span>单点加时当前更新到的 c[i]</span></div>
+            <div class="legend-item"><span class="swatch teal"></span><span>前缀和查询时当前累加到的 c[i]</span></div>
+            <div class="legend-item"><span class="swatch violet"></span><span>已经经过的树状数组节点</span></div>
+            <div class="legend-item"><span class="swatch green"></span><span>最终结果或完成态</span></div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const MAX_N = 20;
+    const CELL_W = 74;
+    const LABEL_W = 90;
+    const TREE_COL_STEP = 96;
+    const TREE_STORAGE_W = 70;
+    const TREE_BIT_W = 172;
+    const TREE_BIT_H = 64;
+    const TREE_BASE_W = 82;
+    const TREE_BASE_H = 50;
+    const TREE_MARGIN_X = 60;
+    const TREE_STORAGE_Y = 18;
+    const TREE_GRAPH_TOP = 118;
+    const TREE_LEVEL_GAP = 92;
+
+    const els = {
+      nInput: document.getElementById("nInput"),
+      valuesInput: document.getElementById("valuesInput"),
+      applyBtn: document.getElementById("applyBtn"),
+      randomBtn: document.getElementById("randomBtn"),
+      configHint: document.getElementById("configHint"),
+      updateIndexInput: document.getElementById("updateIndexInput"),
+      deltaInput: document.getElementById("deltaInput"),
+      queryIndexInput: document.getElementById("queryIndexInput"),
+      structureMode: document.getElementById("structureMode"),
+      updateMode: document.getElementById("updateMode"),
+      queryMode: document.getElementById("queryMode"),
+      dataStage: document.getElementById("dataStage"),
+      treeStage: document.getElementById("treeStage"),
+      treeSummary: document.getElementById("treeSummary"),
+      stepCounter: document.getElementById("stepCounter"),
+      modeLabel: document.getElementById("modeLabel"),
+      progressFill: document.getElementById("progressFill"),
+      stepTitle: document.getElementById("stepTitle"),
+      stepNote: document.getElementById("stepNote"),
+      formulaBox: document.getElementById("formulaBox"),
+      answerBox: document.getElementById("answerBox"),
+      pathFact: document.getElementById("pathFact"),
+      rangeFact: document.getElementById("rangeFact"),
+      lowbitFact: document.getElementById("lowbitFact"),
+      prevBtn: document.getElementById("prevBtn"),
+      playBtn: document.getElementById("playBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      speedInput: document.getElementById("speedInput")
+    };
+
+    let values = [0, 7, 2, 6, 3, 9, 1, 5, 4];
+    let n = values.length - 1;
+    let fenwick = buildFenwick(values);
+    let layout = buildLayout(n);
+    let steps = [];
+    let currentStep = 0;
+    let currentMode = "structure";
+    let playTimer = null;
+
+    function rebuildState(nextValues, modeToKeep) {
+      stopPlaying();
+      values = nextValues.slice(0, MAX_N + 1);
+      n = values.length - 1;
+      fenwick = buildFenwick(values);
+      layout = buildLayout(n);
+      syncInputsToState();
+      currentMode = modeToKeep || currentMode;
+      steps = makeStepsForMode(currentMode);
+      currentStep = 0;
+      render();
+    }
+
+    function buildFenwick(arr) {
+      const bit = Array(arr.length).fill(0);
+      for (let i = 1; i < arr.length; i += 1) {
+        bit[i] += arr[i];
+        const parent = i + lowbit(i);
+        if (parent < arr.length) {
+          bit[parent] += bit[i];
+        }
+      }
+      return bit;
+    }
+
+    function buildLayout(size) {
+      const maxLevel = size > 0 ? Math.floor(Math.log2(size)) : 0;
+      const baseY = TREE_GRAPH_TOP + maxLevel * TREE_LEVEL_GAP + 130;
+      const totalWidth = TREE_MARGIN_X * 2 + Math.max(0, size - 1) * TREE_COL_STEP + TREE_BIT_W;
+      const totalHeight = baseY + TREE_BASE_H + 32;
+      const storage = [];
+      const bitNodes = [];
+      const baseNodes = [];
+      const edges = [];
+
+      for (let i = 1; i <= size; i += 1) {
+        const range = bitRange(i);
+        const level = Math.round(Math.log2(lowbit(i)));
+        const columnX = coordX(i);
+        const centerX = (coordX(range.left) + coordX(range.right)) / 2;
+        const bitY = baseY - 102 - level * TREE_LEVEL_GAP;
+
+        storage.push({
+          id: `head-c-${i}`,
+          index: i,
+          x: columnX - TREE_STORAGE_W / 2,
+          y: TREE_STORAGE_Y
+        });
+
+        bitNodes.push({
+          id: `c-${i}`,
+          index: i,
+          left: range.left,
+          right: range.right,
+          x: centerX - TREE_BIT_W / 2,
+          y: bitY,
+          centerX,
+          centerY: bitY + TREE_BIT_H / 2
+        });
+
+        baseNodes.push({
+          id: `a-${i}`,
+          index: i,
+          x: columnX - TREE_BASE_W / 2,
+          y: baseY,
+          centerX: columnX,
+          centerY: baseY + TREE_BASE_H / 2
+        });
+
+        getCompositionChildren(i).forEach((child) => {
+          edges.push({
+            id: `${child.kind}-${child.index}->c-${i}`,
+            fromId: child.kind === "c" ? `c-${child.index}` : `a-${child.index}`,
+            toId: `c-${i}`
+          });
+        });
+      }
+
+      return {
+        maxLevel,
+        width: totalWidth,
+        height: totalHeight,
+        baseY,
+        storage,
+        bitNodes,
+        baseNodes,
+        edges
+      };
+    }
+
+    function getCompositionChildren(index) {
+      const left = bitRange(index).left;
+      if (left === index) {
+        return [{ kind: "a", index }];
+      }
+      const children = [];
+      let p = index - 1;
+      while (p >= left) {
+        children.push({ kind: "c", index: p });
+        p -= lowbit(p);
+      }
+      children.reverse();
+      children.push({ kind: "a", index });
+      return children;
+    }
+
+    function makeStepsForMode(mode) {
+      if (mode === "update") {
+        return makeUpdateStepsFromInputs();
+      }
+      if (mode === "query") {
+        return makeQueryStepsFromInputs();
+      }
+      return makeStructureSteps();
+    }
+
+    function makeStructureSteps() {
+      const made = [createBaseStep({
+        mode: "structure",
+        modeLabel: "结构",
+        title: "树状数组的结构总览",
+        note: "每个 c[i] 都维护一个后缀长度为 lowbit(i) 的区间，图中的连线表示这个区间是如何由更小的块拼出来的。",
+        formula: "lowbit(i) = i & -i\nc[i] = sum(a[i - lowbit(i) + 1 .. i])",
+        pathText: "按 c[1] 到 c[n] 依次观察",
+        rangeText: "每个 c[i] 都有自己的覆盖区间",
+        lowbitText: "先看 lowbit，再看区间长度",
+        answer: ""
+      })];
+
+      for (let i = 1; i <= n; i += 1) {
+        const range = bitRange(i);
+        const markStep = createBaseStep({
+          mode: "structure",
+          modeLabel: "结构",
+          title: `观察 c[${i}]`,
+          note: `c[${i}] 覆盖区间 [${range.left}, ${range.right}]，长度等于 lowbit(${i}) = ${lowbit(i)}。`,
+          formula: `lowbit(${i}) = ${lowbit(i)}\nc[${i}] = sum(a[${range.left} .. ${range.right}]) = ${fenwick[i]}`,
+          pathText: `当前节点：c[${i}]`,
+          rangeText: `[${range.left}, ${range.right}]`,
+          lowbitText: `${lowbit(i)}`,
+          answer: ""
+        });
+
+        addRangeMarks(markStep.arrayMarks, range.left, range.right, "covered", "structure");
+        addMark(markStep.bitMarks, i, "current", "structure");
+        addMark(markStep.treeBitMarks, i, "current", "structure");
+        addMark(markStep.storageMarks, i, "current", "structure");
+
+        getCompositionChildren(i).forEach((child) => {
+          if (child.kind === "c") {
+            addMark(markStep.treeBitMarks, child.index, "visited", "structure");
+          } else {
+            addMark(markStep.treeBaseMarks, child.index, "visited", "structure");
+          }
+          addEdgeMark(markStep.edgeMarks, `${child.kind}-${child.index}->c-${i}`, "current", "structure");
+        });
+
+        made.push(markStep);
+      }
+
+      made.push(createBaseStep({
+        mode: "structure",
+        modeLabel: "结构",
+        title: "结构关系看完了",
+        note: "现在可以切换到“单点加”或“前缀和”，观察树状数组在节点之间如何跳转。",
+        formula: "更新：x += lowbit(x)\n查询：x -= lowbit(x)",
+        pathText: "更新往上跳，查询往回跳",
+        rangeText: "区间由 lowbit 决定",
+        lowbitText: "所有节点都遵循同一条规则",
+        answer: "树状数组的核心只有一个：lowbit。"
+      }));
+
+      return made;
+    }
+
+    function makeUpdateStepsFromInputs() {
+      const target = parseBoundedIndex(els.updateIndexInput, 1);
+      let delta = Number.parseInt(els.deltaInput.value, 10);
+      if (!Number.isFinite(delta)) {
+        delta = 1;
+      }
+      els.deltaInput.value = delta;
+
+      const path = [];
+      for (let p = target; p <= n; p += lowbit(p)) {
+        path.push(p);
+      }
+      const pathText = "a[" + target + "] -> " + path.map((node) => "c[" + node + "]").join(" -> ");
+
+      const startValues = values.slice();
+      const startBit = fenwick.slice();
+      const made = [createBaseStep({
+        mode: "update",
+        modeLabel: "单点加",
+        title: "准备执行 add(" + target + ", " + delta + ")",
+        note: "从 a[" + target + "] 出发，依次更新路径上的 " + path.map((node) => "c[" + node + "]").join(" -> ") + "。",
+        formula: "a[" + target + "] += " + delta + "\nfor (i = " + target + "; i <= n; i += lowbit(i)) c[i] += " + delta,
+        pathText,
+        rangeText: "[" + bitRange(path[0]).left + ", " + bitRange(path[path.length - 1]).right + "]",
+        lowbitText: "起点 lowbit(" + target + ") = " + lowbit(target),
+        answer: ""
+      })];
+
+      addMark(made[0].arrayMarks, target, "source");
+
+      const changedValues = startValues.slice();
+      changedValues[target] += delta;
+      const touched = [];
+      let currentBit = startBit.slice();
+
+      made.push(createBaseStep({
+        mode: "update",
+        modeLabel: "单点加",
+        title: "先改 a[" + target + "]",
+        note: "原数组上的单点加先落在 a[" + target + "] 上，然后再把这次增量传给受影响的 c[i]。",
+        formula: "a[" + target + "] : " + startValues[target] + " -> " + changedValues[target],
+        pathText,
+        rangeText: "[" + target + ", " + target + "]",
+        lowbitText: String(lowbit(target)),
+        answer: ""
+      }, changedValues, startBit));
+      addMark(made[1].arrayMarks, target, "source");
+
+      path.forEach((node, stepIndex) => {
+        touched.push(node);
+        const before = currentBit[node];
+        currentBit = currentBit.slice();
+        currentBit[node] += delta;
+        const range = bitRange(node);
+        const next = node + lowbit(node);
+        const step = createBaseStep({
+          mode: "update",
+          modeLabel: "单点加",
+          title: "更新 c[" + node + "]",
+          note: "因为 a[" + target + "] 落在 c[" + node + "] 的覆盖区间 [" + range.left + ", " + range.right + "] 内，所以 c[" + node + "] 也要加上 " + delta + "。",
+          formula: "c[" + node + "] : " + before + " -> " + currentBit[node] + "\n下一跳：" + next + (next <= n ? "" : "（超出 n，停止）"),
+          pathText,
+          rangeText: "[" + range.left + ", " + range.right + "]",
+          lowbitText: "lowbit(" + node + ") = " + lowbit(node),
+          answer: stepIndex === path.length - 1 ? "更新完成：a[" + target + "] = " + changedValues[target] : ""
+        }, changedValues, currentBit);
+
+        addMark(step.arrayMarks, target, "source");
+        addRangeMarks(step.arrayMarks, range.left, range.right, "covered", "update");
+        addMark(step.bitMarks, node, "current", "update");
+        addMark(step.treeBitMarks, node, "current", "update");
+        addMark(step.storageMarks, node, "current", "update");
+
+        touched.slice(0, -1).forEach((visitedNode) => {
+          addMark(step.bitMarks, visitedNode, "visited");
+          addMark(step.treeBitMarks, visitedNode, "visited");
+          addMark(step.storageMarks, visitedNode, "visited");
+        });
+
+        const chain = [target, ...path.slice(0, stepIndex + 1)];
+        chain.forEach((value, chainIndex) => {
+          if (chainIndex === 0) {
+            return;
+          }
+          const prev = chain[chainIndex - 1];
+          const fromKind = chainIndex === 1 ? "a" : "c";
+          const fromIndex = prev;
+          addEdgeMark(step.edgeMarks, `${fromKind}-${fromIndex}->c-${value}`, chainIndex === chain.length - 1 ? "current" : "visited", chainIndex === chain.length - 1 ? "update" : undefined);
+        });
+
+        made.push(step);
+      });
+
+      made.push(createBaseStep({
+        mode: "update",
+        modeLabel: "单点加",
+        title: "单点加结束",
+        note: "树状数组里只有包含 a[x] 的节点会被修改，所以更新路径是一条不断向上的链。",
+        formula: "路径：" + path.map((node) => "c[" + node + "]").join(" -> "),
+        pathText,
+        rangeText: "最终受影响节点数：" + path.length,
+        lowbitText: "delta = " + delta,
+        answer: "新的 a[" + target + "] = " + changedValues[target] + "，新的前缀结构已经同步。"
+      }, changedValues, currentBit));
+
+      addMark(made[made.length - 1].arrayMarks, target, "answer");
+      path.forEach((node) => {
+        addMark(made[made.length - 1].bitMarks, node, "answer");
+        addMark(made[made.length - 1].treeBitMarks, node, "answer");
+        addMark(made[made.length - 1].storageMarks, node, "answer");
+      });
+
+      return made;
+    }
+
+    function makeQueryStepsFromInputs() {
+      const target = parseBoundedIndex(els.queryIndexInput, n);
+      const path = [];
+      for (let p = target; p > 0; p -= lowbit(p)) {
+        path.push(p);
+      }
+      const pathText = path.map((node) => "c[" + node + "]").join(" -> ");
+      const blockText = path.map((node) => "c[" + node + "]").join("、");
+
+      let answer = 0;
+      const made = [createBaseStep({
+        mode: "query",
+        modeLabel: "前缀和",
+        title: "准备查询 sum(" + target + ")",
+        note: "前缀和会把 " + blockText + " 这些块加起来，它们刚好不重不漏地覆盖 [1, " + target + "]。",
+        formula: "ans = 0\nfor (i = " + target + "; i > 0; i -= lowbit(i)) ans += c[i]",
+        pathText,
+        rangeText: "[1, " + target + "]",
+        lowbitText: "从 x = " + target + " 开始向前跳",
+        answer: ""
+      })];
+
+      path.forEach((node, stepIndex) => {
+        const range = bitRange(node);
+        const before = answer;
+        answer += fenwick[node];
+        const next = node - lowbit(node);
+        const step = createBaseStep({
+          mode: "query",
+          modeLabel: "前缀和",
+          title: "累加 c[" + node + "]",
+          note: "当前把区间 [" + range.left + ", " + range.right + "] 的和加入答案，然后令 x -= lowbit(x)。",
+          formula: "ans : " + before + " + c[" + node + "](" + fenwick[node] + ") = " + answer + "\n下一跳：" + next,
+          pathText,
+          rangeText: "[" + range.left + ", " + range.right + "]",
+          lowbitText: "lowbit(" + node + ") = " + lowbit(node),
+          answer: stepIndex === path.length - 1 ? "sum(" + target + ") = " + answer : ""
+        });
+
+        addRangeMarks(step.arrayMarks, range.left, range.right, "covered", "query");
+        addMark(step.bitMarks, node, "current", "query");
+        addMark(step.treeBitMarks, node, "current", "query");
+        addMark(step.storageMarks, node, "current", "query");
+
+        path.slice(0, stepIndex).forEach((visitedNode) => {
+          addMark(step.bitMarks, visitedNode, "visited");
+          addMark(step.treeBitMarks, visitedNode, "visited");
+          addMark(step.storageMarks, visitedNode, "visited");
+        });
+
+        made.push(step);
+      });
+
+      made.push(createBaseStep({
+        mode: "query",
+        modeLabel: "前缀和",
+        title: "前缀和结束",
+        note: "查询路径上的区间互不重叠，按顺序把它们的 c[i] 相加，就得到了 [1, x] 的和。",
+        formula: path.map((node) => "c[" + node + "] = " + fenwick[node]).join("\n"),
+        pathText,
+        rangeText: "[1, " + target + "]",
+        lowbitText: "一共访问 " + path.length + " 个节点",
+        answer: "sum(" + target + ") = " + answer
+      }));
+
+      addRangeMarks(made[made.length - 1].arrayMarks, 1, target, "answer", "query");
+      path.forEach((node) => {
+        addMark(made[made.length - 1].bitMarks, node, "answer");
+        addMark(made[made.length - 1].treeBitMarks, node, "answer");
+        addMark(made[made.length - 1].storageMarks, node, "answer");
+      });
+
+      return made;
+    }
+
+    function createBaseStep(meta, arraySnapshot, bitSnapshot) {
+      return {
+        mode: meta.mode,
+        modeLabel: meta.modeLabel,
+        title: meta.title,
+        note: meta.note,
+        formula: meta.formula,
+        pathText: meta.pathText || "-",
+        rangeText: meta.rangeText || "-",
+        lowbitText: meta.lowbitText || "-",
+        answer: meta.answer || "",
+        arrayValues: arraySnapshot ? arraySnapshot.slice() : values.slice(),
+        bitValues: bitSnapshot ? bitSnapshot.slice() : fenwick.slice(),
+        arrayMarks: new Map(),
+        bitMarks: new Map(),
+        storageMarks: new Map(),
+        treeBitMarks: new Map(),
+        treeBaseMarks: new Map(),
+        edgeMarks: new Map()
+      };
+    }
+
+    function render() {
+      const step = steps[currentStep];
+      renderData(step);
+      renderTree(step);
+      els.stepCounter.textContent = `${currentStep + 1} / ${steps.length}`;
+      els.modeLabel.textContent = step.modeLabel;
+      els.progressFill.style.width = steps.length > 1
+        ? `${(currentStep / (steps.length - 1)) * 100}%`
+        : "100%";
+      els.stepTitle.textContent = step.title;
+      els.stepNote.textContent = step.note;
+      els.formulaBox.textContent = step.formula;
+      els.answerBox.textContent = step.answer || " ";
+      els.pathFact.textContent = step.pathText;
+      els.rangeFact.textContent = step.rangeText;
+      els.lowbitFact.textContent = step.lowbitText;
+      els.prevBtn.disabled = currentStep === 0;
+      els.nextBtn.disabled = currentStep === steps.length - 1;
+      els.structureMode.classList.toggle("active", currentMode === "structure");
+      els.updateMode.classList.toggle("active", currentMode === "update");
+      els.queryMode.classList.toggle("active", currentMode === "query");
+    }
+
+    function renderData(step) {
+      const gridTemplate = `${LABEL_W}px repeat(${n}, ${CELL_W}px)`;
+      const rows = [
+        {
+          tag: "a[i]",
+          values: step.arrayValues,
+          marks: step.arrayMarks,
+          valueFormatter: (index) => step.arrayValues[index]
+        },
+        {
+          tag: "lowbit",
+          values: values,
+          marks: new Map(),
+          valueFormatter: (index) => lowbit(index)
+        },
+        {
+          tag: "c[i]",
+          values: step.bitValues,
+          marks: step.bitMarks,
+          valueFormatter: (index) => step.bitValues[index]
+        }
+      ];
+
+      els.dataStage.style.minWidth = `${LABEL_W + n * CELL_W + (n + 1) * 8}px`;
+      els.dataStage.innerHTML = rows.map((row) => {
+        const cells = [];
+        cells.push(`<div class="row-tag">${row.tag}</div>`);
+        for (let i = 1; i <= n; i += 1) {
+          const classes = ["data-cell", ...markClasses(row.marks, i)];
+          cells.push(`<div class="${classes.join(" ")}">
+            <div class="idx">${i}</div>
+            <div class="val">${escapeHtml(String(row.valueFormatter(i)))}</div>
+          </div>`);
+        }
+        return `<div class="value-row" style="grid-template-columns:${gridTemplate};">${cells.join("")}</div>`;
+      }).join("");
+    }
+
+    function renderTree(step) {
+      els.treeSummary.textContent = `c[i] 覆盖区间 [i - lowbit(i) + 1, i]，当前 n = ${n}`;
+      els.treeStage.style.width = `${layout.width}px`;
+      els.treeStage.style.height = `${layout.height}px`;
+
+      const nodeLookup = new Map();
+      layout.bitNodes.forEach((node) => nodeLookup.set(node.id, node));
+      layout.baseNodes.forEach((node) => nodeLookup.set(node.id, node));
+
+      const svgLines = layout.edges.map((edge) => {
+        const fromNode = nodeLookup.get(edge.fromId);
+        const toNode = nodeLookup.get(edge.toId);
+        const x1 = fromNode.centerX;
+        const y1 = fromNode.id.startsWith("a-") ? fromNode.y : fromNode.y;
+        const x2 = toNode.centerX;
+        const y2 = toNode.y + TREE_BIT_H;
+        const classes = markClasses(step.edgeMarks, edge.id);
+        return `<line class="${classes.join(" ")}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#treeArrow)"></line>`;
+      }).join("");
+
+      const storageHtml = layout.storage.map((node) => {
+        const classes = ["storage-cell", ...markClasses(step.storageMarks, node.index)];
+        return `<div class="${classes.join(" ")}" style="left:${node.x}px; top:${node.y}px;">
+          <div class="name">c[${node.index}]</div>
+          <div class="meta">=${escapeHtml(String(step.bitValues[node.index]))}</div>
+        </div>`;
+      }).join("");
+
+      const bitHtml = layout.bitNodes.map((node) => {
+        const classes = ["tree-node", "bit", ...markClasses(step.treeBitMarks, node.index)];
+        return `<div class="${classes.join(" ")}" style="left:${node.x}px; top:${node.y}px;">
+          <div class="name">c[${node.index}] = ${escapeHtml(String(step.bitValues[node.index]))}</div>
+          <div class="meta">Σ a[${node.left}..${node.right}]</div>
+        </div>`;
+      }).join("");
+
+      const baseHtml = layout.baseNodes.map((node) => {
+        const classes = ["tree-node", "base", ...markClasses(step.treeBaseMarks, node.index, step.arrayMarks)];
+        return `<div class="${classes.join(" ")}" style="left:${node.x}px; top:${node.y}px;">
+          <div class="name">a[${node.index}]</div>
+          <div class="meta">${escapeHtml(String(step.arrayValues[node.index]))}</div>
+        </div>`;
+      }).join("");
+
+      els.treeStage.innerHTML = `
+        <svg class="tree-lines" viewBox="0 0 ${layout.width} ${layout.height}" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <marker id="treeArrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"></path>
+            </marker>
+          </defs>
+          ${svgLines}
+        </svg>
+        ${storageHtml}
+        ${bitHtml}
+        ${baseHtml}
+      `;
+    }
+
+    function addMark(targetMap, index, role, mode) {
+      if (!targetMap.has(index)) {
+        targetMap.set(index, new Set());
+      }
+      targetMap.get(index).add(`role-${role}`);
+      if (mode) {
+        targetMap.get(index).add(`mode-${mode}`);
+      }
+    }
+
+    function addRangeMarks(targetMap, left, right, role, mode) {
+      for (let i = left; i <= right; i += 1) {
+        addMark(targetMap, i, role, mode);
+      }
+    }
+
+    function addEdgeMark(targetMap, id, role, mode) {
+      if (!targetMap.has(id)) {
+        targetMap.set(id, new Set());
+      }
+      targetMap.get(id).add(`role-${role}`);
+      if (mode) {
+        targetMap.get(id).add(`mode-${mode}`);
+      }
+    }
+
+    function markClasses(primaryMap, key, fallbackMap) {
+      const classes = [];
+      if (fallbackMap && fallbackMap.has(key)) {
+        fallbackMap.get(key).forEach((name) => classes.push(name));
+      }
+      if (primaryMap.has(key)) {
+        primaryMap.get(key).forEach((name) => classes.push(name));
+      }
+      return classes;
+    }
+
+    function switchMode(mode) {
+      stopPlaying();
+      currentMode = mode;
+      steps = makeStepsForMode(mode);
+      currentStep = 0;
+      render();
+    }
+
+    function applyArrayFromInputs() {
+      const wantedN = clamp(Number.parseInt(els.nInput.value, 10) || n, 1, MAX_N);
+      const parsed = parseValues(els.valuesInput.value);
+      if (parsed.length !== wantedN) {
+        showHint(`当前 n = ${wantedN}，请输入恰好 ${wantedN} 个整数。`, true);
+        els.nInput.value = wantedN;
+        return;
+      }
+      showHint(`已应用 n = ${wantedN} 的数组。`, false);
+      rebuildState([0, ...parsed], currentMode);
+    }
+
+    function randomArray() {
+      const wantedN = clamp(Number.parseInt(els.nInput.value, 10) || n, 1, MAX_N);
+      const next = Array.from({ length: wantedN }, () => Math.floor(Math.random() * 17) + 1);
+      els.valuesInput.value = next.join(" ");
+      showHint(`已生成 n = ${wantedN} 的随机数组。`, false);
+      rebuildState([0, ...next], currentMode);
+    }
+
+    function parseValues(raw) {
+      return raw
+        .trim()
+        .split(/[\s,，]+/)
+        .filter(Boolean)
+        .map((item) => Number(item))
+        .filter((item) => Number.isFinite(item) && Number.isInteger(item));
+    }
+
+    function parseBoundedIndex(input, fallback) {
+      let value = Number.parseInt(input.value, 10);
+      if (!Number.isFinite(value)) {
+        value = fallback;
+      }
+      value = clamp(value, 1, n);
+      input.value = value;
+      return value;
+    }
+
+    function syncInputsToState() {
+      els.nInput.value = n;
+      els.valuesInput.value = values.slice(1).join(" ");
+      els.updateIndexInput.max = n;
+      els.queryIndexInput.max = n;
+      if (Number(els.updateIndexInput.value) > n || Number(els.updateIndexInput.value) < 1) {
+        els.updateIndexInput.value = Math.min(3, n);
+      }
+      if (Number(els.queryIndexInput.value) > n || Number(els.queryIndexInput.value) < 1) {
+        els.queryIndexInput.value = n;
+      }
+    }
+
+    function go(delta) {
+      currentStep = clamp(currentStep + delta, 0, steps.length - 1);
+      render();
+      if (currentStep === steps.length - 1) {
+        stopPlaying();
+      }
+    }
+
+    function togglePlaying() {
+      if (playTimer) {
+        stopPlaying();
+        return;
+      }
+      if (currentStep === steps.length - 1) {
+        currentStep = 0;
+        render();
+      }
+      els.playBtn.textContent = "暂停";
+      els.playBtn.title = "暂停";
+      els.playBtn.setAttribute("aria-label", "暂停");
+      playTimer = window.setInterval(() => go(1), Number(els.speedInput.value));
+    }
+
+    function stopPlaying() {
+      if (playTimer) {
+        window.clearInterval(playTimer);
+        playTimer = null;
+      }
+      els.playBtn.textContent = "播放";
+      els.playBtn.title = "自动播放";
+      els.playBtn.setAttribute("aria-label", "自动播放");
+    }
+
+    function showHint(text, isError) {
+      els.configHint.textContent = text;
+      els.configHint.classList.toggle("error", isError);
+    }
+
+    function lowbit(x) {
+      return x & -x;
+    }
+
+    function bitRange(index) {
+      return {
+        left: index - lowbit(index) + 1,
+        right: index
+      };
+    }
+
+    function coordX(index) {
+      return TREE_MARGIN_X + (index - 1) * TREE_COL_STEP + TREE_BIT_W / 2;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    els.applyBtn.addEventListener("click", applyArrayFromInputs);
+    els.randomBtn.addEventListener("click", randomArray);
+    els.structureMode.addEventListener("click", () => switchMode("structure"));
+    els.updateMode.addEventListener("click", () => switchMode("update"));
+    els.queryMode.addEventListener("click", () => switchMode("query"));
+    els.prevBtn.addEventListener("click", () => go(-1));
+    els.nextBtn.addEventListener("click", () => go(1));
+    els.resetBtn.addEventListener("click", () => {
+      stopPlaying();
+      currentStep = 0;
+      render();
+    });
+    els.playBtn.addEventListener("click", togglePlaying);
+    els.speedInput.addEventListener("input", () => {
+      if (playTimer) {
+        stopPlaying();
+        togglePlaying();
+      }
+    });
+    els.updateIndexInput.addEventListener("change", () => {
+      parseBoundedIndex(els.updateIndexInput, 1);
+      if (currentMode === "update") {
+        switchMode("update");
+      }
+    });
+    els.deltaInput.addEventListener("change", () => {
+      if (currentMode === "update") {
+        switchMode("update");
+      }
+    });
+    els.queryIndexInput.addEventListener("change", () => {
+      parseBoundedIndex(els.queryIndexInput, n);
+      if (currentMode === "query") {
+        switchMode("query");
+      }
+    });
+    els.nInput.addEventListener("change", () => {
+      const wantedN = clamp(Number.parseInt(els.nInput.value, 10) || n, 1, MAX_N);
+      els.nInput.value = wantedN;
+      showHint(`n 已设为 ${wantedN}，请输入 ${wantedN} 个整数后再应用。`, false);
+    });
+
+    rebuildState(values, "structure");
+  </script>
+</body>
+</html>

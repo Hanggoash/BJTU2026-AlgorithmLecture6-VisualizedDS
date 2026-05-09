@@ -1,0 +1,1283 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ST 表可视化</title>
+  <style>
+    :root {
+      --ink: #17212f;
+      --muted: #607089;
+      --line: #d9e1ec;
+      --panel: #ffffff;
+      --page: #f4f7fb;
+      --nav: #172232;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --teal: #0f766e;
+      --teal-soft: #ccfbf1;
+      --amber: #b45309;
+      --amber-soft: #fef3c7;
+      --rose: #be123c;
+      --rose-soft: #ffe4e6;
+      --green: #15803d;
+      --green-soft: #dcfce7;
+      --cell-size: 56px;
+      --cell-step: 55px;
+      --cell-height: 64px;
+      --array-pad-x: 18px;
+      --array-pad-top: 30px;
+      --shadow: 0 14px 32px rgba(21, 30, 45, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--page);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      padding: 17px 24px;
+      color: #ffffff;
+      background: var(--nav);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.15;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 7px 0 0;
+      color: #b9c5d5;
+      font-size: 13px;
+    }
+
+    .playbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .top-btn,
+    .mode-btn,
+    .apply-btn,
+    .random-btn {
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #eef4ff;
+      background: rgba(255, 255, 255, 0.08);
+      transition: transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+    }
+
+    .top-btn {
+      min-width: 40px;
+      padding: 0 10px;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .top-btn:hover,
+    .mode-btn:hover,
+    .apply-btn:hover,
+    .random-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.36);
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      transform: none;
+    }
+
+    .speed {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    .speed input {
+      width: 118px;
+      accent-color: #93c5fd;
+    }
+
+    .configbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 24px;
+      border-bottom: 1px solid #dfe6f0;
+      background: #ffffff;
+    }
+
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #334155;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .field input {
+      height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      color: #17212f;
+      background: #ffffff;
+    }
+
+    .field input[type="number"] {
+      width: 64px;
+      padding: 0 8px;
+    }
+
+    .field input[type="text"] {
+      width: min(520px, 48vw);
+      min-width: 260px;
+      padding: 0 10px;
+    }
+
+    .apply-btn,
+    .random-btn,
+    .mode-btn {
+      padding: 0 14px;
+      color: #17212f;
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .apply-btn {
+      color: #ffffff;
+      border-color: #1d4ed8;
+      background: #2563eb;
+    }
+
+    .mode-btn.active {
+      color: #ffffff;
+      border-color: #0f766e;
+      background: #0f766e;
+    }
+
+    .hint {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hint.error {
+      color: #b91c1c;
+    }
+
+    .stage {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 18px;
+      padding: 18px 24px 24px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #e7edf5;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+      font-weight: 740;
+      letter-spacing: 0;
+    }
+
+    .panel-head span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .array-scroll,
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    .array-stage {
+      position: relative;
+      width: max-content;
+      min-width: 100%;
+      padding: var(--array-pad-top) var(--array-pad-x) 28px;
+    }
+
+    .array-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .array-cell {
+      width: var(--cell-size);
+      height: var(--cell-height);
+      display: grid;
+      grid-template-rows: 20px 1fr;
+      align-items: center;
+      justify-items: center;
+      border: 1px solid #cbd5e1;
+      background: #fbfdff;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .array-cell + .array-cell {
+      margin-left: -1px;
+    }
+
+    .array-cell .idx {
+      align-self: end;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .array-cell .val {
+      align-self: center;
+      max-width: 100%;
+      padding: 0 4px;
+      font-size: 21px;
+      line-height: 1;
+      font-weight: 780;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .array-cell.dimmed {
+      background: #f8fafc;
+      color: #94a3b8;
+    }
+
+    .array-cell.in-build {
+      background: var(--blue-soft);
+    }
+
+    .array-cell.in-left {
+      background: var(--teal-soft);
+    }
+
+    .array-cell.in-right {
+      background: var(--amber-soft);
+    }
+
+    .array-cell.in-left.in-right {
+      background: linear-gradient(135deg, var(--teal-soft) 0 50%, var(--amber-soft) 50% 100%);
+    }
+
+    .array-frame {
+      position: absolute;
+      z-index: 2;
+      height: calc(var(--cell-height) + 14px);
+      border: 3px solid var(--blue);
+      border-radius: 8px;
+      pointer-events: none;
+      transition: left 0.22s ease, width 0.22s ease, top 0.22s ease;
+    }
+
+    .array-frame::after {
+      content: attr(data-label);
+      position: absolute;
+      left: 8px;
+      top: -22px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      color: #ffffff;
+      background: var(--blue);
+      font-size: 11px;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+
+    .array-frame.build {
+      border-color: var(--blue);
+    }
+
+    .array-frame.build::after {
+      background: var(--blue);
+    }
+
+    .array-frame.left {
+      border-color: var(--teal);
+    }
+
+    .array-frame.left::after {
+      background: var(--teal);
+    }
+
+    .array-frame.right {
+      border-color: var(--amber);
+    }
+
+    .array-frame.right::after {
+      background: var(--amber);
+    }
+
+    .table-scroll {
+      padding: 16px;
+    }
+
+    .st-table {
+      width: max-content;
+      min-width: 100%;
+      display: grid;
+      gap: 8px;
+    }
+
+    .st-row {
+      display: grid;
+      gap: 7px;
+      align-items: stretch;
+    }
+
+    .row-label {
+      min-height: 54px;
+      display: grid;
+      align-content: center;
+      gap: 2px;
+      padding: 0 10px;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .row-label strong {
+      font-size: 13px;
+    }
+
+    .row-label span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .st-cell {
+      width: var(--cell-size);
+      min-height: 54px;
+      display: grid;
+      grid-template-rows: 1fr 17px;
+      align-items: center;
+      justify-items: center;
+      border: 2px solid #dbe3ee;
+      border-radius: 8px;
+      background: #ffffff;
+      transition: transform 0.22s ease, border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
+    }
+
+    .st-cell.invalid {
+      visibility: hidden;
+    }
+
+    .st-cell.pending {
+      color: transparent;
+      border-style: dashed;
+      background: #f8fafc;
+      opacity: 0.45;
+    }
+
+    .cell-main {
+      max-width: 100%;
+      padding: 0 4px;
+      font-size: 19px;
+      line-height: 1;
+      font-weight: 780;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cell-range {
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .st-cell.target {
+      border-color: var(--blue);
+      background: var(--blue-soft);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px rgba(37, 99, 235, 0.15);
+    }
+
+    .st-cell.source-left,
+    .st-cell.query-left {
+      border-color: var(--teal);
+      background: var(--teal-soft);
+    }
+
+    .st-cell.source-right,
+    .st-cell.query-right {
+      border-color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    .st-cell.answer-cell {
+      border-color: var(--green);
+      background: var(--green-soft);
+      box-shadow: 0 12px 20px rgba(21, 128, 61, 0.13);
+    }
+
+    .target .cell-main,
+    .answer-cell .cell-main {
+      animation: pop 0.32s ease;
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(0.86);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .inspector {
+      display: flex;
+      flex-direction: column;
+      align-self: start;
+      min-height: 640px;
+      overflow: hidden;
+    }
+
+    .status {
+      padding: 16px;
+      border-bottom: 1px solid #e7edf5;
+    }
+
+    .step-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .progress-track {
+      height: 7px;
+      margin-top: 10px;
+      border-radius: 999px;
+      background: #e6ebf2;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: #2563eb;
+      transition: width 0.18s ease;
+    }
+
+    .step-body {
+      padding: 18px 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .step-body h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.25;
+      font-weight: 780;
+      letter-spacing: 0;
+    }
+
+    .step-body p {
+      margin: 0;
+      color: #445166;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .formula {
+      min-height: 78px;
+      padding: 12px;
+      color: #0f172a;
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      background: #eff6ff;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .answer {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      color: #14532d;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      background: #f0fdf4;
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    .legend {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid #e7edf5;
+    }
+
+    .legend h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+    }
+
+    .legend-list {
+      display: grid;
+      gap: 8px;
+      color: #445166;
+      font-size: 13px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      border: 2px solid;
+      border-radius: 5px;
+    }
+
+    .swatch.blue {
+      border-color: var(--blue);
+      background: var(--blue-soft);
+    }
+
+    .swatch.teal {
+      border-color: var(--teal);
+      background: var(--teal-soft);
+    }
+
+    .swatch.amber {
+      border-color: var(--amber);
+      background: var(--amber-soft);
+    }
+
+    .swatch.green {
+      border-color: var(--green);
+      background: var(--green-soft);
+    }
+
+    @media (max-width: 1040px) {
+      .topbar,
+      .configbar {
+        grid-template-columns: 1fr;
+      }
+
+      .playbar {
+        justify-content: flex-start;
+      }
+
+      .stage {
+        grid-template-columns: 1fr;
+      }
+
+      .inspector {
+        min-height: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>ST 表可视化</h1>
+        <p>静态区间最小值 RMQ：构建时保存长度为 2^j 的区间答案，查询时用两个块覆盖区间。</p>
+      </div>
+      <div class="playbar" aria-label="播放控制">
+        <button class="top-btn" id="prevBtn" type="button" title="上一步" aria-label="上一步">&lt;</button>
+        <button class="top-btn" id="playBtn" type="button" title="自动播放" aria-label="自动播放">播放</button>
+        <button class="top-btn" id="nextBtn" type="button" title="下一步" aria-label="下一步">&gt;</button>
+        <button class="top-btn" id="resetBtn" type="button" title="重置" aria-label="重置">重置</button>
+        <label class="speed">速度 <input id="speedInput" type="range" min="350" max="1600" step="50" value="850" /></label>
+      </div>
+    </header>
+
+    <section class="configbar" aria-label="数据与模式设置">
+      <div class="input-group">
+        <label class="field">n
+          <input id="nInput" type="number" min="1" max="20" value="8" />
+        </label>
+        <label class="field">数组
+          <input id="valuesInput" type="text" value="7 2 6 3 9 1 5 4" />
+        </label>
+        <button class="apply-btn" id="applyBtn" type="button">应用数组</button>
+        <button class="random-btn" id="randomBtn" type="button">随机数组</button>
+        <span class="hint" id="configHint">最多 20 个整数，支持空格或逗号分隔。</span>
+      </div>
+      <div class="input-group">
+        <label class="field">L
+          <input id="leftInput" type="number" min="1" max="8" value="2" />
+        </label>
+        <label class="field">R
+          <input id="rightInput" type="number" min="1" max="8" value="7" />
+        </label>
+        <button class="mode-btn active" id="buildMode" type="button">构建动画</button>
+        <button class="mode-btn" id="queryMode" type="button">查询动画</button>
+      </div>
+    </section>
+
+    <main class="stage">
+      <div class="workspace">
+        <section class="panel array-panel">
+          <div class="panel-head">
+            <h2>原数组 a[i]</h2>
+            <span>一排连续相邻方块，下标从 1 开始</span>
+          </div>
+          <div class="array-scroll">
+            <div class="array-stage" id="arrayStage">
+              <div class="array-row" id="arrayRow"></div>
+              <div id="arrayFrames"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-head">
+            <h2>ST 表</h2>
+            <span>st[i][j] 表示区间 [i, i + 2^j - 1] 的最小值</span>
+          </div>
+          <div class="table-scroll">
+            <div class="st-table" id="stTable"></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="panel inspector">
+        <div class="status">
+          <div class="step-topline">
+            <span id="stepCounter">1 / 1</span>
+            <span id="modeLabel">构建</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <div class="step-body">
+          <h2 id="stepTitle"></h2>
+          <p id="stepNote"></p>
+          <div class="formula" id="formulaBox"></div>
+          <div class="answer" id="answerBox"></div>
+        </div>
+
+        <div class="legend">
+          <h3>颜色</h3>
+          <div class="legend-list">
+            <div class="legend-item"><span class="swatch blue"></span><span>构建时当前 st[i][j] 对应区间</span></div>
+            <div class="legend-item"><span class="swatch teal"></span><span>查询左块 [L, L + 2^k - 1]</span></div>
+            <div class="legend-item"><span class="swatch amber"></span><span>查询右块 [R - 2^k + 1, R]</span></div>
+            <div class="legend-item"><span class="swatch green"></span><span>最终答案所在 ST 单元</span></div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const MAX_N = 20;
+    const CELL_SIZE = 56;
+    const CELL_STEP = 55;
+    const ARRAY_PAD_X = 18;
+    const ARRAY_PAD_TOP = 30;
+    const CELL_HEIGHT = 64;
+
+    const els = {
+      nInput: document.getElementById("nInput"),
+      valuesInput: document.getElementById("valuesInput"),
+      applyBtn: document.getElementById("applyBtn"),
+      randomBtn: document.getElementById("randomBtn"),
+      configHint: document.getElementById("configHint"),
+      leftInput: document.getElementById("leftInput"),
+      rightInput: document.getElementById("rightInput"),
+      buildMode: document.getElementById("buildMode"),
+      queryMode: document.getElementById("queryMode"),
+      arrayStage: document.getElementById("arrayStage"),
+      arrayRow: document.getElementById("arrayRow"),
+      arrayFrames: document.getElementById("arrayFrames"),
+      stTable: document.getElementById("stTable"),
+      stepCounter: document.getElementById("stepCounter"),
+      modeLabel: document.getElementById("modeLabel"),
+      progressFill: document.getElementById("progressFill"),
+      stepTitle: document.getElementById("stepTitle"),
+      stepNote: document.getElementById("stepNote"),
+      formulaBox: document.getElementById("formulaBox"),
+      answerBox: document.getElementById("answerBox"),
+      prevBtn: document.getElementById("prevBtn"),
+      playBtn: document.getElementById("playBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      speedInput: document.getElementById("speedInput")
+    };
+
+    let values = [7, 2, 6, 3, 9, 1, 5, 4];
+    let n = values.length;
+    let maxJ = 0;
+    let st = [];
+    let cellOrder = [];
+    let cellOrderIndex = new Map();
+    let steps = [];
+    let currentStep = 0;
+    let currentMode = "build";
+    let playTimer = null;
+
+    function rebuildState(nextValues, modeToKeep) {
+      stopPlaying();
+      values = nextValues.slice(0, MAX_N);
+      n = values.length;
+      maxJ = Math.floor(Math.log2(n));
+      st = buildSparseTable(values);
+      cellOrder = buildCellOrder();
+      cellOrderIndex = new Map(cellOrder.map((cell, index) => [`${cell.j}-${cell.i}`, index]));
+      syncInputsToState();
+      currentMode = modeToKeep || currentMode;
+      steps = currentMode === "query" ? makeQueryStepsFromInputs() : makeBuildSteps();
+      currentStep = 0;
+      render();
+    }
+
+    function buildSparseTable(arr) {
+      const table = [];
+      table[0] = arr.slice();
+      for (let j = 1; j <= Math.floor(Math.log2(arr.length)); j += 1) {
+        table[j] = Array(arr.length).fill(null);
+        const length = 1 << j;
+        const half = length >> 1;
+        for (let i = 0; i + length <= arr.length; i += 1) {
+          table[j][i] = Math.min(table[j - 1][i], table[j - 1][i + half]);
+        }
+      }
+      return table;
+    }
+
+    function buildCellOrder() {
+      const order = [];
+      for (let j = 0; j <= maxJ; j += 1) {
+        const length = 1 << j;
+        for (let i = 0; i + length <= n; i += 1) {
+          order.push({ i, j });
+        }
+      }
+      return order;
+    }
+
+    function makeBuildSteps() {
+      const made = [{
+        modeLabel: "构建",
+        title: "开始构建 ST 表",
+        note: "每个 st[i][j] 都对应原数组中一个连续区间，动画会在数组行上框出这个区间。",
+        formula: "st[i][0] = a[i]\nst[i][j] = min(st[i][j - 1], st[i + 2^(j - 1)][j - 1])",
+        visibleCount: 0,
+        cellMarks: [],
+        arrayMarks: [],
+        frames: [],
+        answer: ""
+      }];
+
+      let visibleCount = 0;
+      for (let j = 0; j <= maxJ; j += 1) {
+        const length = 1 << j;
+        for (let i = 0; i + length <= n; i += 1) {
+          visibleCount += 1;
+          const interval = { from: i, to: i + length - 1, type: "build" };
+          if (j === 0) {
+            made.push({
+              modeLabel: "构建",
+              title: `写入 st[${i + 1}][0]`,
+              note: `当前区间是 [${i + 1}, ${i + 1}]，长度为 1，最小值就是这个元素本身。`,
+              formula: `st[${i + 1}][0] = a[${i + 1}] = ${values[i]}`,
+              visibleCount,
+              cellMarks: [{ i, j, type: "target" }],
+              arrayMarks: [interval],
+              frames: [{ ...interval, label: `st[${i + 1}][0]` }],
+              answer: ""
+            });
+            continue;
+          }
+
+          const half = length >> 1;
+          const leftValue = st[j - 1][i];
+          const rightValue = st[j - 1][i + half];
+          made.push({
+            modeLabel: "构建",
+            title: `构建 st[${i + 1}][${j}]`,
+            note: `当前 ST 单元对应原数组区间 [${i + 1}, ${i + length}]，长度为 ${length}。`,
+            formula: `st[${i + 1}][${j}] = min(st[${i + 1}][${j - 1}], st[${i + half + 1}][${j - 1}])\n= min(${leftValue}, ${rightValue}) = ${st[j][i]}`,
+            visibleCount,
+            cellMarks: [
+              { i, j: j - 1, type: "source-left" },
+              { i: i + half, j: j - 1, type: "source-right" },
+              { i, j, type: "target" }
+            ],
+            arrayMarks: [interval],
+            frames: [{ ...interval, label: `st[${i + 1}][${j}]` }],
+            answer: ""
+          });
+        }
+      }
+
+      made.push({
+        modeLabel: "构建",
+        title: "ST 表构建完成",
+        note: "现在每一层 j 都保存了长度为 2^j 的区间最小值，可以切换到查询动画查看两个覆盖块。",
+        formula: `n = ${n}, 最大 j = floor(log2(n)) = ${maxJ}`,
+        visibleCount: cellOrder.length,
+        cellMarks: [],
+        arrayMarks: [],
+        frames: [],
+        answer: ""
+      });
+      return made;
+    }
+
+    function makeQueryStepsFromInputs() {
+      const query = parseQueryInputs();
+      return makeQuerySteps(query.left, query.right);
+    }
+
+    function makeQuerySteps(left, right) {
+      const length = right - left + 1;
+      const k = Math.floor(Math.log2(length));
+      const block = 1 << k;
+      const rightStart = right - block + 1;
+      const leftValue = st[k][left];
+      const rightValue = st[k][rightStart];
+      const answer = Math.min(leftValue, rightValue);
+      const leftFrame = {
+        from: left,
+        to: left + block - 1,
+        type: "left",
+        label: `[${left + 1}, ${left + block}]`
+      };
+      const rightFrame = {
+        from: rightStart,
+        to: right,
+        type: "right",
+        label: `[${rightStart + 1}, ${right + 1}]`
+      };
+
+      return [
+        {
+          modeLabel: "查询",
+          title: `查询 RMQ(${left + 1}, ${right + 1})`,
+          note: `查询区间长度为 ${length}，取 k = floor(log2(${length})) = ${k}，所以两个查询块的长度都是 ${block}。`,
+          formula: `len = r - l + 1 = ${length}\nk = floor(log2(len)) = ${k}\nblock = 2^k = ${block}`,
+          visibleCount: cellOrder.length,
+          cellMarks: [],
+          arrayMarks: [],
+          frames: [],
+          answer: ""
+        },
+        {
+          modeLabel: "查询",
+          title: "框出左查询块",
+          note: `左块从 L 开始，覆盖 [${left + 1}, ${left + block}]。`,
+          formula: `leftValue = st[${left + 1}][${k}] = ${leftValue}`,
+          visibleCount: cellOrder.length,
+          cellMarks: [{ i: left, j: k, type: "query-left" }],
+          arrayMarks: [leftFrame],
+          frames: [leftFrame],
+          answer: ""
+        },
+        {
+          modeLabel: "查询",
+          title: "框出右查询块",
+          note: `右块以 R 结尾，覆盖 [${rightStart + 1}, ${right + 1}]。两个块可以重叠。`,
+          formula: `rightValue = st[${rightStart + 1}][${k}] = ${rightValue}`,
+          visibleCount: cellOrder.length,
+          cellMarks: [
+            { i: left, j: k, type: "query-left" },
+            { i: rightStart, j: k, type: "query-right" }
+          ],
+          arrayMarks: [leftFrame, rightFrame],
+          frames: [leftFrame, rightFrame],
+          answer: ""
+        },
+        {
+          modeLabel: "查询",
+          title: "合并两个查询块",
+          note: "两个长度为 2^k 的块已经覆盖整个查询区间，RMQ 的答案就是两个块答案的最小值。",
+          formula: `ans = min(st[${left + 1}][${k}], st[${rightStart + 1}][${k}])\n= min(${leftValue}, ${rightValue}) = ${answer}`,
+          visibleCount: cellOrder.length,
+          cellMarks: [
+            { i: left, j: k, type: "query-left" },
+            { i: rightStart, j: k, type: "query-right" },
+            leftValue <= rightValue
+              ? { i: left, j: k, type: "answer" }
+              : { i: rightStart, j: k, type: "answer" }
+          ],
+          arrayMarks: [leftFrame, rightFrame],
+          frames: [leftFrame, rightFrame],
+          answer: `RMQ(${left + 1}, ${right + 1}) = ${answer}`
+        }
+      ];
+    }
+
+    function render() {
+      const step = steps[currentStep];
+      renderArray(step.arrayMarks, step.frames);
+      renderTable(step.visibleCount, step.cellMarks);
+      els.stepCounter.textContent = `${currentStep + 1} / ${steps.length}`;
+      els.modeLabel.textContent = step.modeLabel;
+      els.progressFill.style.width = steps.length > 1
+        ? `${(currentStep / (steps.length - 1)) * 100}%`
+        : "100%";
+      els.stepTitle.textContent = step.title;
+      els.stepNote.textContent = step.note;
+      els.formulaBox.textContent = step.formula;
+      els.answerBox.textContent = step.answer || " ";
+      els.prevBtn.disabled = currentStep === 0;
+      els.nextBtn.disabled = currentStep === steps.length - 1;
+      els.buildMode.classList.toggle("active", currentMode === "build");
+      els.queryMode.classList.toggle("active", currentMode === "query");
+    }
+
+    function renderArray(marks, frames) {
+      const markSets = values.map(() => new Set());
+      marks.forEach((mark) => {
+        for (let i = mark.from; i <= mark.to; i += 1) {
+          if (i >= 0 && i < n) {
+            markSets[i].add(`in-${mark.type}`);
+          }
+        }
+      });
+
+      els.arrayRow.innerHTML = values.map((value, index) => {
+        const classes = ["array-cell", ...markSets[index]].join(" ");
+        return `<div class="${classes}">
+          <div class="idx">${index + 1}</div>
+          <div class="val" title="${escapeHtml(String(value))}">${escapeHtml(String(value))}</div>
+        </div>`;
+      }).join("");
+
+      const totalWidth = ARRAY_PAD_X * 2 + CELL_SIZE + (n - 1) * CELL_STEP;
+      els.arrayStage.style.minWidth = `${totalWidth}px`;
+      els.arrayFrames.innerHTML = frames.map((frame, index) => renderFrame(frame, index)).join("");
+    }
+
+    function renderFrame(frame, index) {
+      const left = ARRAY_PAD_X + frame.from * CELL_STEP - 5;
+      const width = CELL_SIZE + (frame.to - frame.from) * CELL_STEP + 10;
+      const topOffset = frame.type === "right" ? 3 : frame.type === "left" ? -7 : -5;
+      const top = ARRAY_PAD_TOP + topOffset;
+      const label = escapeHtml(frame.label || "");
+      return `<div class="array-frame ${frame.type}" data-label="${label}" style="left:${left}px; top:${top}px; width:${width}px; z-index:${3 + index};"></div>`;
+    }
+
+    function renderTable(visibleCount, marks) {
+      const markMap = new Map();
+      marks.forEach((mark) => {
+        const key = `${mark.j}-${mark.i}`;
+        if (!markMap.has(key)) {
+          markMap.set(key, []);
+        }
+        markMap.get(key).push(mark.type);
+      });
+
+      let html = "";
+      for (let j = 0; j <= maxJ; j += 1) {
+        const length = 1 << j;
+        html += `<div class="st-row" style="grid-template-columns: 92px repeat(${n}, var(--cell-size));">
+          <div class="row-label"><strong>j=${j}</strong><span>len=${length}</span></div>`;
+
+        for (let i = 0; i < n; i += 1) {
+          if (i + length > n) {
+            html += `<div class="st-cell invalid"></div>`;
+            continue;
+          }
+
+          const orderIndex = cellOrderIndex.get(`${j}-${i}`) ?? -1;
+          const visible = orderIndex < visibleCount;
+          const markTypes = markMap.get(`${j}-${i}`) || [];
+          const classes = ["st-cell"];
+          if (!visible) {
+            classes.push("pending");
+          }
+          if (markTypes.includes("target")) {
+            classes.push("target");
+          }
+          if (markTypes.includes("source-left")) {
+            classes.push("source-left");
+          }
+          if (markTypes.includes("source-right")) {
+            classes.push("source-right");
+          }
+          if (markTypes.includes("query-left")) {
+            classes.push("query-left");
+          }
+          if (markTypes.includes("query-right")) {
+            classes.push("query-right");
+          }
+          if (markTypes.includes("answer")) {
+            classes.push("answer-cell");
+          }
+
+          html += `<div class="${classes.join(" ")}">
+            <div class="cell-main" title="${visible ? escapeHtml(String(st[j][i])) : ""}">${visible ? escapeHtml(String(st[j][i])) : ""}</div>
+            <div class="cell-range">[${i + 1},${i + length}]</div>
+          </div>`;
+        }
+
+        html += "</div>";
+      }
+      els.stTable.innerHTML = html;
+    }
+
+    function applyArrayFromInputs() {
+      const wantedN = clamp(Number.parseInt(els.nInput.value, 10) || values.length, 1, MAX_N);
+      const parsed = parseValues(els.valuesInput.value);
+      if (parsed.length !== wantedN) {
+        showHint(`当前 n=${wantedN}，请填写恰好 ${wantedN} 个整数。`, true);
+        els.nInput.value = wantedN;
+        return;
+      }
+      showHint(`已应用 n=${wantedN} 的数组。`, false);
+      rebuildState(parsed, currentMode);
+    }
+
+    function randomArray() {
+      const wantedN = clamp(Number.parseInt(els.nInput.value, 10) || n, 1, MAX_N);
+      const next = Array.from({ length: wantedN }, () => Math.floor(Math.random() * 90) + 10);
+      els.valuesInput.value = next.join(" ");
+      showHint(`已生成 n=${wantedN} 的随机数组。`, false);
+      rebuildState(next, currentMode);
+    }
+
+    function parseValues(raw) {
+      return raw
+        .trim()
+        .split(/[\s,，;；]+/)
+        .filter(Boolean)
+        .map((item) => Number(item))
+        .filter((item) => Number.isFinite(item) && Number.isInteger(item));
+    }
+
+    function parseQueryInputs() {
+      let left = Number.parseInt(els.leftInput.value, 10);
+      let right = Number.parseInt(els.rightInput.value, 10);
+      if (!Number.isFinite(left)) {
+        left = 1;
+      }
+      if (!Number.isFinite(right)) {
+        right = n;
+      }
+      left = clamp(left, 1, n);
+      right = clamp(right, 1, n);
+      if (left > right) {
+        const temp = left;
+        left = right;
+        right = temp;
+      }
+      els.leftInput.value = left;
+      els.rightInput.value = right;
+      return { left: left - 1, right: right - 1 };
+    }
+
+    function syncInputsToState() {
+      els.nInput.value = n;
+      els.valuesInput.value = values.join(" ");
+      els.leftInput.max = n;
+      els.rightInput.max = n;
+      if (Number(els.leftInput.value) > n) {
+        els.leftInput.value = 1;
+      }
+      if (Number(els.rightInput.value) > n) {
+        els.rightInput.value = n;
+      }
+      if (Number(els.leftInput.value) < 1) {
+        els.leftInput.value = 1;
+      }
+      if (Number(els.rightInput.value) < 1) {
+        els.rightInput.value = n;
+      }
+    }
+
+    function switchToBuild() {
+      stopPlaying();
+      currentMode = "build";
+      steps = makeBuildSteps();
+      currentStep = 0;
+      render();
+    }
+
+    function switchToQuery() {
+      stopPlaying();
+      currentMode = "query";
+      steps = makeQueryStepsFromInputs();
+      currentStep = 0;
+      render();
+    }
+
+    function go(delta) {
+      currentStep = clamp(currentStep + delta, 0, steps.length - 1);
+      render();
+      if (currentStep === steps.length - 1) {
+        stopPlaying();
+      }
+    }
+
+    function togglePlaying() {
+      if (playTimer) {
+        stopPlaying();
+        return;
+      }
+      if (currentStep === steps.length - 1) {
+        currentStep = 0;
+        render();
+      }
+      els.playBtn.textContent = "暂停";
+      els.playBtn.title = "暂停";
+      els.playBtn.setAttribute("aria-label", "暂停");
+      playTimer = window.setInterval(() => go(1), Number(els.speedInput.value));
+    }
+
+    function stopPlaying() {
+      if (playTimer) {
+        window.clearInterval(playTimer);
+        playTimer = null;
+      }
+      els.playBtn.textContent = "播放";
+      els.playBtn.title = "自动播放";
+      els.playBtn.setAttribute("aria-label", "自动播放");
+    }
+
+    function showHint(text, isError) {
+      els.configHint.textContent = text;
+      els.configHint.classList.toggle("error", isError);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    els.applyBtn.addEventListener("click", applyArrayFromInputs);
+    els.randomBtn.addEventListener("click", randomArray);
+    els.buildMode.addEventListener("click", switchToBuild);
+    els.queryMode.addEventListener("click", switchToQuery);
+    els.prevBtn.addEventListener("click", () => go(-1));
+    els.nextBtn.addEventListener("click", () => go(1));
+    els.resetBtn.addEventListener("click", () => {
+      stopPlaying();
+      currentStep = 0;
+      render();
+    });
+    els.playBtn.addEventListener("click", togglePlaying);
+    els.speedInput.addEventListener("input", () => {
+      if (playTimer) {
+        stopPlaying();
+        togglePlaying();
+      }
+    });
+    els.leftInput.addEventListener("change", () => {
+      if (currentMode === "query") {
+        switchToQuery();
+      } else {
+        parseQueryInputs();
+      }
+    });
+    els.rightInput.addEventListener("change", () => {
+      if (currentMode === "query") {
+        switchToQuery();
+      } else {
+        parseQueryInputs();
+      }
+    });
+    els.nInput.addEventListener("change", () => {
+      const wantedN = clamp(Number.parseInt(els.nInput.value, 10) || n, 1, MAX_N);
+      els.nInput.value = wantedN;
+      showHint(`n 已设为 ${wantedN}，请填写 ${wantedN} 个整数后应用。`, false);
+    });
+
+    rebuildState(values, "build");
+  </script>
+</body>
+</html>
